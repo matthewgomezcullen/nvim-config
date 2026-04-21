@@ -62,5 +62,15 @@ return {
         opts = {
             ensure_installed = { "texlab", "lua_ls" },
         },
-    }
+    },
+    {
+        "saghen/blink.cmp",
+        version = "*",
+        opts = {
+            keymap = { preset = "default" },
+            sources = {
+                default = { "lsp", "path", "buffer" },
+            },
+        },
+    },
 }
