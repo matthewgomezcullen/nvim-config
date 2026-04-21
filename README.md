@@ -188,4 +188,38 @@ Use the standard Claude Code CLI or Codex CLI.
 
 ### LaTeX
 
-[**Skim**](https://skim-app.sourceforge.io/index.html) for rendering PDFs. Works with SyncTex.
+[**Skim**](https://skim-app.sourceforge.io/index.html) for rendering PDFs. Works with SyncTeX.
+
+Configure VimTeX to use Skim with SyncTeX in `lua/plugins/latex.lua`:
+
+```lua
+vim.g.vimtex_view_method = "skim"
+vim.g.vimtex_view_skim_sync = 1      -- enable forward search
+vim.g.vimtex_view_skim_activate = 1  -- bring Skim to foreground on forward search
+```
+
+Skim auto-reloads changed PDFs, so live preview works automatically once VimTeX compiles.
+
+**Backward search (Skim → Neovim)**
+
+Install [neovim-remote](https://github.com/mhinz/neovim-remote), which lets Skim send commands back to the running Neovim instance:
+
+```bash
+pip3 install neovim-remote
+```
+
+Then in **Skim → Settings → Sync**, set:
+
+| Field | Value |
+| --- | --- |
+| Preset | Custom |
+| Command | `nvr` |
+| Arguments | `--remote-silent +"%line" "%file"` |
+
+**Keybinds**
+
+| Keybind | Effect |
+| --- | --- |
+| `\ll` | Compile |
+| `\lv` | Forward search (jump to cursor position in Skim) |
+| `Cmd+Shift+Click` | Backward search (jump to source line in Neovim) |
