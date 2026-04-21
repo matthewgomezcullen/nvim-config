@@ -1,0 +1,17 @@
+# Lazy.nvim plugin directory
+lazy/
+
+# Neovim cache and data
+*.log
+*.swp
+*.swo
+*~
+
+# LSP and plugin caches
+.cache/
+
+# Mason (LSP installer) binaries
+mason/
+
+# Treesitter parsers
+parser/
