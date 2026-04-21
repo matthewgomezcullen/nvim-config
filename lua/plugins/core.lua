@@ -47,9 +47,20 @@ return {
             { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
         }
     },
-    { "neovim/nvim-lspconfig" },
+    {
+        "neovim/nvim-lspconfig",
+        config = function()
+            require("config.lsp")
+        end,
+    },
     {
         "mason-org/mason.nvim",
         opts = {}
+    },
+    {
+        "mason-org/mason-lspconfig.nvim",
+        opts = {
+            ensure_installed = { "texlab", "lua_ls" },
+        },
     }
 }
