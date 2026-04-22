@@ -127,6 +127,19 @@ LSP configurations sit in the `lsp` config file.
 | Package | Purpose |
 | --- | --- |
 | [gitsigns](https://github.com/lewis6991/gitsigns.nvim) | Real-time Git integration for the editor. |
+| [diffview.nvim](https://github.com/sindrets/diffview.nvim) | Side-by-side diff viewer and file history browser. |
+
+**Commands**
+
+| Command | Effect |
+| --- | --- |
+| `:DiffviewOpen` | Diff working tree against HEAD |
+| `:DiffviewOpen HEAD~2` | Diff against a specific revision |
+| `:DiffviewFileHistory %` | Commit history for the current file |
+| `:DiffviewFileHistory` | Commit history for the whole repo |
+| `:DiffviewClose` | Close the diffview |
+
+Inside the diff view, `<tab>` / `<s-tab>` navigate between files, and `s` stages or unstages the highlighted file.
 
 ## Nerd Fonts
 
