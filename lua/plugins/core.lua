@@ -13,6 +13,12 @@ return {
                     api.config.mappings.default_on_attach(bufnr)
                     vim.keymap.del("n", "<C-k>", { buffer = bufnr })
                     vim.keymap.set("n", "<C-i>", api.node.show_info_popup, { buffer = bufnr, noremap = true, silent = true, nowait = true, desc = "nvim-tree: Info" })
+                    vim.keymap.set("n", "<C-o>", function()
+                        local node = api.tree.get_node_under_cursor()
+                        if node and node.absolute_path then
+                            vim.fn.jobstart({ "open", node.absolute_path }, { detach = true })
+                        end
+                    end, { buffer = bufnr, noremap = true, silent = true, nowait = true, desc = "nvim-tree: Open with default app" })
                 end,
             }
         end,
