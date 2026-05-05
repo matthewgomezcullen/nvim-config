@@ -13,7 +13,6 @@ return {
                     api.config.mappings.default_on_attach(bufnr)
                     vim.keymap.del("n", "<C-k>", { buffer = bufnr })
                     vim.keymap.set("n", "<C-i>", api.node.show_info_popup, { buffer = bufnr, noremap = true, silent = true, nowait = true, desc = "nvim-tree: Info" })
-                    vim.keymap.set("n", "<C-e>", api.tree.toggle, { noremap = true, silent = true, desc = "nvim-tree: Toggle" })
                     vim.keymap.set("n", "<C-f>", function() api.tree.find_file({ open = true, focus = true }) end, { noremap = true, silent = true, desc = "nvim-tree: Find File" })
                     vim.keymap.set("n", "<C-o>", function()
                         local node = api.tree.get_node_under_cursor()
