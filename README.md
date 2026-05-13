@@ -60,6 +60,9 @@ See the configurations I use below.
 | `vim.keymap.set("n", "<leader>fg", ...)` | Search text with Telescope live grep. |
 | `vim.keymap.set("n", "j" / "k", ...)` | Move by screen lines with `gj` / `gk` when no count is given; counted motions keep normal line movement. |
 | `vim.keymap.set("n", "<Down>" / "<Up>", ...)` | Match the same screen-line behavior for the arrow keys. |
+| `<leader>ma` | Add cursors for every match of the word under the cursor or the visual selection. |
+| `<leader>mn` / `<leader>mN` | Add the next / previous matching cursor. |
+| `<leader>ms` / `<leader>mS` | Skip the next / previous matching cursor. |
 
 **autocmds**
 
@@ -108,6 +111,7 @@ LSP configurations sit in the `lsp` config file.
 | [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) | Extendable fuzzy finder to find, filter, preview, and pick items like files, strings, and LSP references |  |
 | [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) | Provides server configurations for the LSP. |  |
 | [mason.nvim](https://github.com/mason-org/mason.nvim) | Portable package manager for LSP servers, DAP servers, linters, and formatters. |  |
+| [multicursor.nvim](https://github.com/jake-stewart/multicursor.nvim) | Multiple cursors for editing repeated words or selections. | Use `<leader>ma` to add cursors for all matches, then edit normally. |
 
 ### `tmux`
 
