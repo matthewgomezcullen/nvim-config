@@ -54,7 +54,12 @@ See the configurations I use below.
 
 | Line | Effect |
 | --- | --- |
-| vim.keymap.set("n", "<leader>r", ":e<CR>", { desc = "Reload file from disk" }) | Use for **agentic workflows**. This command refreshes the open editor to view external changes (e.g., from an agent) |
+| `vim.keymap.set("n", "<leader>r", ":e!<CR>", { desc = "Reload file from disk" })` | Use for **agentic workflows**. This command refreshes the open editor to view external changes (e.g., from an agent). |
+| `vim.keymap.set("n", "<leader>e", ...)` | Toggle `nvim-tree`. |
+| `vim.keymap.set("n", "<leader>ff", ...)` | Find files with Telescope, including hidden and ignored files. |
+| `vim.keymap.set("n", "<leader>fg", ...)` | Search text with Telescope live grep. |
+| `vim.keymap.set("n", "j" / "k", ...)` | Move by screen lines with `gj` / `gk` when no count is given; counted motions keep normal line movement. |
+| `vim.keymap.set("n", "<Down>" / "<Up>", ...)` | Match the same screen-line behavior for the arrow keys. |
 
 **autocmds**
 
@@ -106,9 +111,9 @@ LSP configurations sit in the `lsp` config file.
 
 ### `tmux`
 
-| Package | Purpose |
-| --- | --- |
-| [vim-tmux-navigator](https://github.com/christoomey/vim-tmux-navigator) | Navigate between tmux panes and vim splits. |
+| Package | Purpose | Configurations |
+| --- | --- | --- |
+| [vim-tmux-navigator](https://github.com/christoomey/vim-tmux-navigator) | Navigate between tmux panes and vim splits. | Maps `Ctrl+h/j/k/l` and `Ctrl+←/↓/↑/→` to directional pane movement, plus `Ctrl+\` for the previous pane. |
 
 ### `latex`
 
@@ -185,7 +190,7 @@ bind -r L resize-pane -R 5
 
 Now you can use `Ctrl+b → H/J/K/L` to resize the panes (instead of the arrow keys, which don’t work on MacOS, as `Ctrl+← ↑ ↓ →` has its own effects).
 
-Install https://github.com/christoomey/vim-tmux-navigator with Lazy and follow the setup instructions. These changes enable shifting between tmux panels in and outside of nvim with `ctrl+h/j/k/l`.
+Install https://github.com/christoomey/vim-tmux-navigator with Lazy and follow the setup instructions. These changes enable shifting between tmux panes in and outside of nvim with `ctrl+h/j/k/l` or `ctrl+←/↓/↑/→`.
 
 ## Applications
 
