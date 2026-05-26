@@ -127,9 +127,45 @@ LSP configurations sit in the `lsp` config file.
 
 ### `markdown`
 
-| Package | Purpose |
-| --- | --- |
-| [render-markdown.nvim](https://github.com/MeanderingProgrammer/render-markdown.nvim) | Render markdown inside Neovim. |
+| Package | Purpose | Configurations |
+| --- | --- | --- |
+| [render-markdown.nvim](https://github.com/MeanderingProgrammer/render-markdown.nvim) | Render markdown inside Neovim. |  |
+| [LuaSnip](https://github.com/L3MON4D3/LuaSnip) | Snippet engine. Powers the math-typing autosnippets below. | Autosnippets enabled; loader at `lua/snippets/markdown_math.lua` populates the `markdown` filetype on startup. |
+| [nvim-autopairs](https://github.com/windwp/nvim-autopairs) | Autoclose `(`, `[`, `{`, `"`, etc. Adds a `$...$` pair for Markdown buffers. |  |
+| [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) (`main` branch) | Parsers for `markdown`, `markdown_inline`, `lua`, `latex`. Used both by `render-markdown.nvim` and by the math-zone detector. | Requires the `tree-sitter` CLI on `$PATH` — `brew install tree-sitter-cli`. Highlighting enabled via a `FileType` autocmd. |
+| [blink.cmp](https://github.com/Saghen/blink.cmp) (extension) | Wired into LuaSnip via `snippets = { preset = "luasnip" }`, with `snippets` added to the default source list. | `<Tab>` advances between snippet tab stops; `<S-Tab>` jumps back. |
+
+#### Math typing
+
+Inside a `$...$` or `$$...$$` zone in a Markdown buffer the following autosnippets fire automatically. Activation is gated by Treesitter (`latex_block`, `inline_formula`, `displayed_equation`, etc.), so typing `alpha` in prose stays literal.
+
+| Trigger | Expands to | Notes |
+| --- | --- | --- |
+| `^` | `^{\|}` | Cursor lands between the braces. Type the exponent, then `}` (autopair move-past) or `<Tab>` to exit. |
+| `_` | `_{\|}` | Subscript counterpart. |
+| `{a}/{b}` | `\frac{a}{b}` | Fires when you type the opening brace of the denominator; the autopair-inserted `}` becomes `\frac`'s closing brace. |
+| ~105 user-defined triggers (see `snippets.txt`) | e.g. `al` $\to$ `\alpha`, `bi` $\to$ `\binom{\|}{}`, `gather` $\to$ `\begin{gather}\|\end{gather}` | Word-trigger semantics — only fires at a word boundary. |
+
+#### `snippets.txt` format
+
+One snippet per line:
+
+```
+trigger:::expansion;
+```
+
+- `#cursor` marks the first tab stop (cursor lands here on expansion).
+- `#tab` marks each subsequent tab stop in document order.
+
+Examples:
+
+```
+al:::\alpha;
+bi:::\binom{#cursor}{#tab};
+gather:::\begin{gather}#cursor\end{gather};
+```
+
+The loader (`lua/snippets/markdown_math.lua`) reads the file at startup, converts each entry into a LuaSnip autosnippet, and surfaces warnings in `:messages` for duplicate triggers or malformed lines (e.g. expansion ends in a bare `\`). Skipped entries are noted with their line number so they're easy to fix.
 
 ### `git`
 
