@@ -167,6 +167,15 @@ gather:::\begin{gather}#cursor\end{gather};
 
 The loader (`lua/snippets/markdown_math.lua`) reads the file at startup, converts each entry into a LuaSnip autosnippet, and surfaces warnings in `:messages` for duplicate triggers or malformed lines (e.g. expansion ends in a bare `\`). Skipped entries are noted with their line number so they're easy to fix.
 
+### `python`
+
+| Package | Purpose | Configurations |
+| --- | --- | --- |
+| [basedpyright](https://github.com/DetachHead/basedpyright) | Python type checker / LSP. Provides hover, go-to-def, completions, diagnostics. | `typeCheckingMode = "standard"`. Auto-installed via mason. Detects `.venv/`, `venv/`, conda envs, and `$VIRTUAL_ENV` automatically. |
+| [ruff](https://github.com/astral-sh/ruff) | Linter + formatter. Runs as both an LSP (diagnostics, code actions like organize-imports / fix-all) and as a `conform.nvim` formatter (`ruff_organize_imports` $\to$ `ruff_format`). | Hover disabled on the ruff LSP so basedpyright owns hover output. The same mason-installed `ruff` binary serves both roles. |
+
+The `python` treesitter parser is enabled for syntax highlighting. Format-on-save is not configured — run `:lua require("conform").format()` to format the current buffer.
+
 ### `git`
 
 | Package | Purpose |

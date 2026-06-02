@@ -26,7 +26,11 @@ return {
     },
     {
         'stevearc/conform.nvim',
-        opts = {},
+        opts = {
+            formatters_by_ft = {
+                python = { "ruff_organize_imports", "ruff_format" },
+            },
+        },
     },
     {
         "folke/which-key.nvim",
@@ -67,7 +71,7 @@ return {
     {
         "mason-org/mason-lspconfig.nvim",
         opts = {
-            ensure_installed = { "texlab", "lua_ls" },
+            ensure_installed = { "texlab", "lua_ls", "basedpyright", "ruff" },
         },
     },
     {

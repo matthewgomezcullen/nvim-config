@@ -6,11 +6,11 @@ return {
         build = ":TSUpdate",
         config = function()
             require("nvim-treesitter").install({
-                "markdown", "markdown_inline", "lua", "latex",
+                "markdown", "markdown_inline", "lua", "latex", "python",
             })
 
             vim.api.nvim_create_autocmd("FileType", {
-                pattern = { "markdown", "lua", "latex" },
+                pattern = { "markdown", "lua", "latex", "python" },
                 callback = function()
                     pcall(vim.treesitter.start)
                 end,
