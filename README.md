@@ -130,21 +130,31 @@ LSP configurations sit in the `lsp` config file.
 | Package | Purpose | Configurations |
 | --- | --- | --- |
 | [render-markdown.nvim](https://github.com/MeanderingProgrammer/render-markdown.nvim) | Render markdown inside Neovim. |  |
-| [LuaSnip](https://github.com/L3MON4D3/LuaSnip) | Snippet engine. Powers the math-typing autosnippets below. | Autosnippets enabled; loader at `lua/snippets/markdown_math.lua` populates the `markdown` filetype on startup. |
-| [nvim-autopairs](https://github.com/windwp/nvim-autopairs) | Autoclose `(`, `[`, `{`, `"`, etc. Adds a `$...$` pair for Markdown buffers. |  |
+| [LuaSnip](https://github.com/L3MON4D3/LuaSnip) | Snippet engine. Powers the math-typing snippets below. | Loader at `lua/snippets/markdown_math.lua` populates the `markdown` filetype on startup. Expansion is triggered by `<Space>`; `<S-Space>` inserts a literal space without expanding. |
+| [nvim-autopairs](https://github.com/windwp/nvim-autopairs) | Autoclose `(`, `[`, `{`, `"`, etc. | `ts_config` includes a `markdown = {}` entry so the treesitter gate doesn't suppress pairing inside Markdown buffers. `$...$` and `$$...$$` are handled by a buffer-local `$` keymap in `markdown_math.lua`, not by autopairs. |
 | [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) (`main` branch) | Parsers for `markdown`, `markdown_inline`, `lua`, `latex`. Used both by `render-markdown.nvim` and by the math-zone detector. | Requires the `tree-sitter` CLI on `$PATH` — `brew install tree-sitter-cli`. Highlighting enabled via a `FileType` autocmd. |
-| [blink.cmp](https://github.com/Saghen/blink.cmp) (extension) | Wired into LuaSnip via `snippets = { preset = "luasnip" }`, with `snippets` added to the default source list. | `<Tab>` advances between snippet tab stops; `<S-Tab>` jumps back. |
+| [blink.cmp](https://github.com/Saghen/blink.cmp) (extension) | Wired into LuaSnip via `snippets = { preset = "luasnip" }`, with `snippets` added to the default source list. | `<Tab>` chain: `snippet_forward` → math-zone exit → `fallback`. Inside a snippet, advances tab stops; outside a snippet but inside math, jumps the cursor past the closing `$` / `$$`; otherwise normal Tab. `<S-Tab>` jumps back through snippet stops. |
 
 #### Math typing
 
-Inside a `$...$` or `$$...$$` zone in a Markdown buffer the following autosnippets fire automatically. Activation is gated by Treesitter (`latex_block`, `inline_formula`, `displayed_equation`, etc.), so typing `alpha` in prose stays literal.
+Inside a `$...$` or `$$...$$` zone in a Markdown buffer, the following snippets and keymaps apply. Math-zone activation is gated by Treesitter (`latex_block`, `inline_formula`, `displayed_equation`, etc.), so typing `alpha` in prose stays literal.
+
+Expansion model: type the trigger, then `<Space>` to expand. Use `<S-Space>` to insert a literal space without expanding.
 
 | Trigger | Expands to | Notes |
 | --- | --- | --- |
-| `^` | `^{\|}` | Cursor lands between the braces. Type the exponent, then `}` (autopair move-past) or `<Tab>` to exit. |
+| `^` | `^{\|}` | Direct insert-mode keymap (not a snippet). Type the exponent, then `<Right>` to exit. |
 | `_` | `_{\|}` | Subscript counterpart. |
-| `{a}/{b}` | `\frac{a}{b}` | Fires when you type the opening brace of the denominator; the autopair-inserted `}` becomes `\frac`'s closing brace. |
-| ~105 user-defined triggers (see `snippets.txt`) | e.g. `al` $\to$ `\alpha`, `bi` $\to$ `\binom{\|}{}`, `gather` $\to$ `\begin{gather}\|\end{gather}` | Word-trigger semantics — only fires at a word boundary. |
+| `{a}/{b}<Space>` | `\frac{a}{b}` | Regex snippet — fires on `<Space>` once both braces are typed. |
+| ~105 user-defined triggers (see `snippets.txt`) | e.g. `al<Space>` $\to$ `\alpha`, `bi<Space>` $\to$ `\binom{\|}{}`, `gather<Space>` $\to$ `\begin{gather}\|\end{gather}` | Word-trigger semantics; the `<Space>` is consumed by the expansion. |
+
+Exiting a math zone:
+
+| Keystroke | Effect |
+| --- | --- |
+| `$` at `$\|$` | Jump past closing `$`. |
+| `$` at `$$\|$$` | Jump past closing `$$`. |
+| `<Tab>` (no active snippet stop) | Jump past the closing `$` / `$$` of whichever math zone encloses the cursor. Inside an active snippet, `<Tab>` advances tab stops first. |
 
 #### `snippets.txt` format
 

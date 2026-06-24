@@ -9,12 +9,43 @@ local math_zone_node_types = {
 }
 
 function M.in_mathzone()
-    local ok, node = pcall(vim.treesitter.get_node)
+    local ok_p, parser = pcall(vim.treesitter.get_parser, 0)
+    if not ok_p or not parser then
+        return false
+    end
+    local pos = vim.api.nvim_win_get_cursor(0)
+    local row = pos[1] - 1
+    pcall(parser.parse, parser, { row, 0, row + 1, 0 })
+
+    local ok, node = pcall(vim.treesitter.get_node, { ignore_injections = false })
     if not ok or not node then
         return false
     end
     while node do
         if math_zone_node_types[node:type()] then
+            return true
+        end
+        node = node:parent()
+    end
+    return false
+end
+
+function M.exit_math_node()
+    local ok_p, parser = pcall(vim.treesitter.get_parser, 0)
+    if not ok_p or not parser then
+        return false
+    end
+    local pos = vim.api.nvim_win_get_cursor(0)
+    local row = pos[1] - 1
+    pcall(parser.parse, parser, { row, 0, row + 1, 0 })
+
+    local node = vim.treesitter.get_node({ ignore_injections = false })
+    while node do
+        if math_zone_node_types[node:type()] then
+            local _, _, end_row, end_col = node:range()
+            local line = vim.api.nvim_buf_get_lines(0, end_row, end_row + 1, false)[1] or ""
+            end_col = math.min(end_col, #line)
+            vim.api.nvim_win_set_cursor(0, { end_row + 1, end_col })
             return true
         end
         node = node:parent()
@@ -125,7 +156,7 @@ end
 
 function M.build_snippets(path)
     local ls = require("luasnip")
-    local s, i, t, f = ls.snippet, ls.insert_node, ls.text_node, ls.function_node
+    local s, f = ls.snippet, ls.function_node
 
     local out = {}
 
@@ -133,45 +164,106 @@ function M.build_snippets(path)
         table.insert(out, s({
             trig = entry.trigger,
             wordTrig = true,
-            snippetType = "autosnippet",
         }, body_to_nodes(entry.body), { condition = M.in_mathzone }))
     end
 
-    -- {a}/{b} -> \frac{a}{b}
-    -- Trigger fires when the user types the *opening* brace of the denominator.
-    -- The autopair-inserted `}` to the right of the cursor becomes the closing
-    -- brace of \frac, so we deliberately don't emit a trailing `}` here.
+    -- {a}/{b} -> \frac{a}{b}, expanded on <Space>.
     table.insert(out, s({
-        trig = "{([^{}]+)}/{",
+        trig = "{(.-)}/{(.-)}",
         regTrig = true,
         wordTrig = false,
-        snippetType = "autosnippet",
     }, {
         f(function(_, snip)
-            return "\\frac{" .. snip.captures[1] .. "}{"
+            return "\\frac{" .. snip.captures[1] .. "}{" .. snip.captures[2] .. "}"
         end),
-        i(1),
     }, { condition = M.in_mathzone }))
 
-    table.insert(out, s({
-        trig = "^",
-        wordTrig = false,
-        snippetType = "autosnippet",
-    }, { t("^{"), i(1), t("}") }, { condition = M.in_mathzone }))
-
-    table.insert(out, s({
-        trig = "_",
-        wordTrig = false,
-        snippetType = "autosnippet",
-    }, { t("_{"), i(1), t("}") }, { condition = M.in_mathzone }))
-
     return out
+end
+
+local function insert_text_at_cursor(text, cursor_advance)
+    local pos = vim.api.nvim_win_get_cursor(0)
+    local row, col = pos[1] - 1, pos[2]
+    vim.api.nvim_buf_set_text(0, row, col, row, col, { text })
+    vim.api.nvim_win_set_cursor(0, { row + 1, col + (cursor_advance or #text) })
+end
+
+local function math_pair_handler(char)
+    return function()
+        if M.in_mathzone() then
+            insert_text_at_cursor(char .. "{}", 2)
+        else
+            insert_text_at_cursor(char)
+        end
+    end
+end
+
+local function dollar_handler()
+    local pos = vim.api.nvim_win_get_cursor(0)
+    local row, col = pos[1] - 1, pos[2]
+    local line = vim.api.nvim_buf_get_lines(0, row, row + 1, false)[1] or ""
+    local cb = col > 0 and line:sub(col, col) or ""
+    local ca = line:sub(col + 1, col + 1)
+    local cb2 = col >= 2 and line:sub(col - 1, col - 1) or ""
+    local ca2 = line:sub(col + 2, col + 2)
+
+    if cb == "$" and ca == "$" and cb2 == "$" and ca2 == "$" then
+        vim.api.nvim_win_set_cursor(0, { row + 1, col + 2 })
+    elseif cb == "$" and ca == "$" then
+        vim.api.nvim_buf_set_text(0, row, col, row, col, { "$$" })
+        vim.api.nvim_win_set_cursor(0, { row + 1, col + 1 })
+    elseif ca == "$" then
+        vim.api.nvim_win_set_cursor(0, { row + 1, col + 1 })
+    else
+        vim.api.nvim_buf_set_text(0, row, col, row, col, { "$$" })
+        vim.api.nvim_win_set_cursor(0, { row + 1, col + 1 })
+    end
+end
+
+local function space_handler()
+    local ls = require("luasnip")
+    if ls.expandable() then
+        ls.expand()
+        return
+    end
+    insert_text_at_cursor(" ")
+end
+
+local function install_buffer_keymaps(bufnr)
+    vim.keymap.set("i", "<Space>", space_handler, {
+        buffer = bufnr, desc = "Expand snippet or insert space",
+    })
+    vim.keymap.set("i", "<S-Space>", " ", {
+        buffer = bufnr, desc = "Insert literal space (bypass snippet expansion)",
+    })
+    vim.keymap.set("i", "^", math_pair_handler("^"), {
+        buffer = bufnr, desc = "Superscript autopair in math",
+    })
+    vim.keymap.set("i", "_", math_pair_handler("_"), {
+        buffer = bufnr, desc = "Subscript autopair in math",
+    })
+    vim.keymap.set("i", "$", dollar_handler, {
+        buffer = bufnr, desc = "Display math autopair",
+    })
 end
 
 function M.setup()
     local ls = require("luasnip")
     local path = vim.fn.stdpath("config") .. "/snippets.txt"
     ls.add_snippets("markdown", M.build_snippets(path), { key = "markdown_math" })
+
+    vim.api.nvim_create_autocmd("FileType", {
+        pattern = "markdown",
+        callback = function(args)
+            install_buffer_keymaps(args.buf)
+        end,
+    })
+
+    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == "markdown" then
+            install_buffer_keymaps(buf)
+        end
+    end
 end
 
 return M

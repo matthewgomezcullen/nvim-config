@@ -79,7 +79,26 @@ return {
         version = "*",
         dependencies = { "L3MON4D3/LuaSnip" },
         opts = {
-            keymap = { preset = "default" },
+            keymap = {
+                preset = "default",
+                ["<Tab>"] = {
+                    "snippet_forward",
+                    function()
+                        if vim.bo.filetype ~= "markdown" then
+                            return false
+                        end
+                        local ok, mm = pcall(require, "snippets.markdown_math")
+                        if not ok then
+                            return false
+                        end
+                        if mm.in_mathzone() then
+                            return mm.exit_math_node()
+                        end
+                        return false
+                    end,
+                    "fallback",
+                },
+            },
             snippets = { preset = "luasnip" },
             sources = {
                 default = { "lsp", "path", "snippets", "buffer" },
