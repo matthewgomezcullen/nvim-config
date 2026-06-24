@@ -263,6 +263,18 @@ Use the standard Claude Code CLI or Codex CLI.
 
 [**Glow**](https://github.com/charmbracelet/glow) for rendering Markdown in the CLI. Watches files and updates as they change.
 
+[**mo**](https://github.com/k1LoW/mo) renders Markdown in the browser with live-reload, and handles GitHub-flavored Markdown, KaTeX math, and Mermaid diagrams. Install with `brew install k1low/tap/mo`. It runs as a background server on `localhost:6275` that serves every opened file from a single page — re-running `mo <file>` adds to the running session rather than starting a new one. Inspect or tear down the session with `mo --status` / `mo --shutdown`.
+
+`ftplugin/markdown.lua` wires `mo` into Neovim with a buffer-local `:MoRender` command plus automatic cleanup:
+
+| Command / event | Effect |
+| --- | --- |
+| `:MoRender` | Save the buffer if modified, then open it in the browser via `mo`. |
+| Buffer deleted (`:bd`) | Remove the file from mo's session (`mo --close`) so it stops lingering in the sidebar. |
+| Quit Neovim (`:q` / `:qa`) | Remove every rendered file from mo's session on exit. |
+
+`mo` is a background server with no signal for the browser being closed, so cleanup is tied to the Neovim buffer lifecycle instead. Closing only the browser tab leaves the file in mo until you delete the buffer or quit Neovim. `BufDelete` (not `BufUnload`) is used so reloading the file with `:e` doesn't drop it from the session.
+
 ### LaTeX
 
 [**Skim**](https://skim-app.sourceforge.io/index.html) for rendering PDFs. Works with SyncTeX.
