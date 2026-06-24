@@ -146,7 +146,7 @@ Expansion model: type the trigger, then `<Space>` to expand. Use `<S-Space>` to 
 | `^` | `^{\|}` | Direct insert-mode keymap (not a snippet). Type the exponent, then `<Right>` to exit. |
 | `_` | `_{\|}` | Subscript counterpart. |
 | `{a}/{b}<Space>` | `\frac{a}{b}` | Regex snippet — fires on `<Space>` once both braces are typed. |
-| ~105 user-defined triggers (see `snippets.txt`) | e.g. `al<Space>` $\to$ `\alpha`, `bi<Space>` $\to$ `\binom{\|}{}`, `gather<Space>` $\to$ `\begin{gather}\|\end{gather}` | Word-trigger semantics; the `<Space>` is consumed by the expansion. |
+| ~90 user-defined triggers (see `snippets.txt`) | e.g. `al<Space>` $\to$ `\alpha`, `bi<Space>` $\to$ `\binom{\|}{}`, `gather<Space>` $\to$ `\begin{gather}\|\end{gather}` | Word-trigger semantics; the `<Space>` is consumed by the expansion. |
 
 Exiting a math zone:
 
@@ -175,7 +175,17 @@ bi:::\binom{#cursor}{#tab};
 gather:::\begin{gather}#cursor\end{gather};
 ```
 
-The loader (`lua/snippets/markdown_math.lua`) reads the file at startup, converts each entry into a LuaSnip autosnippet, and surfaces warnings in `:messages` for duplicate triggers or malformed lines (e.g. expansion ends in a bare `\`). Skipped entries are noted with their line number so they're easy to fix.
+The loader (`lua/snippets/markdown_math.lua`) reads the file at startup, converts each entry into a LuaSnip snippet (expanded on `<Space>`, gated to math zones), and surfaces warnings in `:messages` for duplicate triggers or malformed lines (e.g. expansion ends in a bare `\`). Skipped entries are noted with their line number so they're easy to fix.
+
+#### Tests
+
+The math-typing module has a headless test suite covering math-zone detection, the `$` / `^` / `_` autopairs, space-triggered expansion, and math-zone exit. Run it with:
+
+```bash
+nvim --headless -u test/init.lua -c "luafile test/markdown_math_spec.lua"
+```
+
+The runner exits non-zero if any test fails, so it slots into CI or a pre-commit hook.
 
 ### `python`
 
