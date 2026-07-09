@@ -64,6 +64,9 @@ See the configurations I use below.
 | `<leader>mn` / `<leader>mN` | Add the next / previous matching cursor. |
 | `<leader>ms` / `<leader>mS` | Skip the next / previous matching cursor. |
 | `<leader>cln` | Open a dedicated, resumable Claude session in a small tmux pane below Neovim for quick questions about this Neovim setup. Also available as `:Claude`. See [Agents](#agents). |
+| `<leader>clc` | Open the project Claude Code session in a tmux pane to the left, connected to this Neovim. Also available as `:ClaudeProject`. See [Agents](#agents). |
+| `<leader>cls` | Send the visual selection (or the current file) to that session as an `@file#L10-20` mention. |
+| `<leader>cla` / `<leader>cld` | Accept / reject the diff Claude is proposing. Equivalent to `:w` / `:q` in the diff buffer. |
 
 **autocmds**
 
@@ -216,6 +219,14 @@ The `python` treesitter parser is enabled for syntax highlighting. Format-on-sav
 
 Inside the diff view, `<tab>` / `<s-tab>` navigate between files, and `s` stages or unstages the highlighted file.
 
+### `claude`
+
+| Package | Purpose | Configurations |
+| --- | --- | --- |
+| [claudecode.nvim](https://github.com/coder/claudecode.nvim) | Connects the Claude Code CLI to Neovim over the same IDE protocol the official VS Code extension speaks, so selections become `@file#L10-20` mentions and Claude's edits open as native diffs. | `terminal = { provider = "none" }`, so it manages no terminal and Claude keeps running in its own tmux pane. Loaded eagerly (`lazy = false`) because its WebSocket server starts inside `setup()`. |
+
+The plugin only supplies the integration server; the panes, the launchers, and the `<leader>cl` keymaps live in `lua/config/claude.lua`. See [Agents](#agents).
+
 ## Nerd Fonts
 
 Many plugins will use icons only supported by nerd fonts. A popular nerd font is provided by JetBrains. Install with HomeBrew:
@@ -280,6 +291,23 @@ For questions *about this Neovim setup* while editing any project, `<leader>cln`
 | Ephemeral pane | Focus it with `<C-j>` (vim-tmux-navigator); it closes when you exit Claude (`Ctrl-D`) and Neovim reclaims the space. Re-invoking refocuses the existing pane instead of stacking a new one. Requires Neovim running inside tmux. |
 
 Implementation: `scripts/claude-nvim-helper.sh` (resume-or-create against the fixed session id, plus the model and system prompt) and `lua/config/claude.lua` (the `:Claude` command, `<leader>cln` map, and pane management). If you change the session id, first confirm it is unused with `ls ~/.claude/projects/*/<new-id>.jsonl` — an id that already has a session file will silently resume that conversation instead of starting the helper thread.
+
+#### Editor integration for the project session
+
+`<leader>clc` (or `:ClaudeProject`) opens the project Claude Code session in a tmux pane to the left, connected to this Neovim over the same IDE protocol the official VS Code extension speaks. Once connected, `<leader>cls` sends the visual selection as an `@file#L10-20` mention, and every edit Claude proposes opens as a native Neovim diff — accept it with `<leader>cla` (or `:w`), reject it with `<leader>cld` (or `:q`).
+
+`coder/claudecode.nvim` provides this, configured with `terminal = { provider = "none" }`. That setting is the point: the plugin does not wrap Claude Code in a panel of its own. It spawns the real `claude` binary, and with the `none` provider it spawns nothing at all — `setup()` merely starts a local WebSocket server and advertises it in `~/.claude/ide/<port>.lock`. The interface stays exactly the Claude Code TUI you already run in tmux, so it cannot drift behind the real thing.
+
+| Behavior | Detail |
+| --- | --- |
+| Connects on launch | `scripts/claude-code.sh` runs `claude --ide`, which finds the lock file and attaches. It also pins `CLAUDE_CODE_SSE_PORT` to this Neovim's port, because `--ide` auto-connects only when *exactly one* IDE is available and would otherwise decline with a second Neovim open. |
+| Loaded eagerly | The plugin spec sets `lazy = false`, because the server starts inside `setup()`. Lazy-loading it on a keymap would race: `claude --ide` would find no lock file. |
+| Local only | The server binds `127.0.0.1`. The lock file (mode `0600`, in a `0700` directory) carries a 128-bit CSPRNG token, checked with a constant-time compare during the WebSocket handshake. The plugin reports no telemetry. |
+| The setup helper stays out of it | `<leader>cln` passes neither `--ide` nor a port, and `autoConnectIde` is off, so the read-only setup helper never attaches and never captures a diff meant for the project you are editing. |
+
+Implementation: `lua/plugins/claude.lua` (the plugin spec and the `cls` / `cla` / `cld` maps), `scripts/claude-code.sh` (the `--ide` launcher), and `lua/config/claude.lua` (tmux pane management for both panes).
+
+Two caveats. The wire protocol is not published by Anthropic and `claudecode.nvim` is beta, so a CLI update can break the integration; the TUI and `<leader>cln` keep working regardless. And with `provider = "none"` the plugin's own terminal commands (`:ClaudeCode`, `:ClaudeCodeOpen`, `:ClaudeCodeSendText`) are inert, so they are deliberately left unmapped. If you ever enable `format_on_save` in `conform.nvim`, exclude diff buffers (`buftype == "acwrite"`, or names containing `(proposed)`) or saving will silently accept Claude's diff.
 
 ### Markdown
 
