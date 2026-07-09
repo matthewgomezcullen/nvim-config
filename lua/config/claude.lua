@@ -20,6 +20,19 @@ local function pane_alive(pane)
   return pane ~= "" and vim.tbl_contains(vim.fn.systemlist({ "tmux", "list-panes", "-F", "#{pane_id}" }), pane)
 end
 
+-- Focus the pane recorded under `var`, falling back to the previously active pane (which is
+-- normally the Claude pane you just came from) when nothing was recorded.
+local function focus_pane(var)
+  if vim.env.TMUX == nil then
+    return
+  end
+  local pane = tmux({ "show-options", "-wqv", var })
+  if not pane_alive(pane) then
+    pane = "{last}"
+  end
+  tmux({ "select-pane", "-t", pane })
+end
+
 -- Open a tmux pane running `cmd`, or refocus it if it is already open. The pane id lives on
 -- a tmux window option, so repeated invocations never stack panes. (A pane title marker
 -- would not survive Claude's TUI overwriting it.)
@@ -66,3 +79,74 @@ vim.keymap.set("n", "<leader>clc", project_session, { desc = "Claude: project se
 -- Allow lowercase `:claude` -> `:Claude` (user commands must be capitalized; this only
 -- expands when `claude` is the entire command line).
 vim.cmd([[cnoreabbrev <expr> claude (getcmdtype() == ':' && getcmdline() ==# 'claude') ? 'Claude' : 'claude']])
+
+-- Give the CLI up to POLL_MS * POLL_TRIES to write an accepted diff to disk.
+local POLL_MS, POLL_TRIES = 100, 20
+
+local function buf_for(path)
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_loaded(buf) and vim.api.nvim_buf_get_name(buf) == path then
+      return buf
+    end
+  end
+end
+
+-- Re-read from disk in the window showing the buffer, so the cursor survives.
+local function reload(buf)
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    if vim.api.nvim_win_get_buf(win) == buf then
+      local cursor = vim.api.nvim_win_get_cursor(win)
+      vim.api.nvim_win_call(win, function() vim.cmd("silent! edit") end)
+      pcall(vim.api.nvim_win_set_cursor, win, cursor) -- the file may have shrunk
+      return
+    end
+  end
+  vim.api.nvim_buf_call(buf, function() vim.cmd("silent! edit") end)
+end
+
+-- claudecode reloads 100ms after the CLI's `close_tab` call, but the CLI writes the file
+-- *after* that call, so a slow write leaves the buffer stale. Wait for the file to actually
+-- diverge from the buffer instead of guessing a delay. A rejected diff never diverges, so
+-- this quietly does nothing there.
+local function reload_when_written(path, buf, tries)
+  if not vim.api.nvim_buf_is_loaded(buf) or vim.bo[buf].modified then
+    return -- never clobber unsaved work
+  end
+  local ok, disk = pcall(vim.fn.readfile, path)
+  if ok and not vim.deep_equal(disk, vim.api.nvim_buf_get_lines(buf, 0, -1, false)) then
+    reload(buf)
+    return
+  end
+  if tries < POLL_TRIES then
+    vim.defer_fn(function() reload_when_written(path, buf, tries + 1) end, POLL_MS)
+  end
+end
+
+local group = vim.api.nvim_create_augroup("ClaudeIde", { clear = true })
+
+-- `focus_after_send` is inert with provider = "none" (Claude runs outside Neovim), so the
+-- plugin offers this event instead. It fires once per file and only while Claude is
+-- connected; `select-pane` is idempotent, so repeats are harmless.
+vim.api.nvim_create_autocmd("User", {
+  group = group,
+  pattern = "ClaudeCodeSendComplete",
+  callback = function()
+    focus_pane("@claude_code_pane")
+  end,
+})
+
+vim.api.nvim_create_autocmd("User", {
+  group = group,
+  pattern = "ClaudeCodeDiffClosed",
+  callback = function(ev)
+    local path = ev.data and ev.data.file_path
+    if not path or path == "" then
+      return
+    end
+    path = vim.fn.fnamemodify(path, ":p")
+    local buf = buf_for(path)
+    if buf then
+      reload_when_written(path, buf, 0)
+    end
+  end,
+})

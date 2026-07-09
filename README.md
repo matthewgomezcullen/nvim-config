@@ -65,8 +65,8 @@ See the configurations I use below.
 | `<leader>ms` / `<leader>mS` | Skip the next / previous matching cursor. |
 | `<leader>cln` | Open a dedicated, resumable Claude session in a small tmux pane below Neovim for quick questions about this Neovim setup. Also available as `:Claude`. See [Agents](#agents). |
 | `<leader>clc` | Open the project Claude Code session in a tmux pane to the left, connected to this Neovim. Also available as `:ClaudeProject`. See [Agents](#agents). |
-| `<leader>cls` | Send the visual selection (or the current file) to that session as an `@file#L10-20` mention. |
-| `<leader>cla` / `<leader>cld` | Accept / reject the diff Claude is proposing. Equivalent to `:w` / `:q` in the diff buffer. |
+| `<leader>cls` | Send the visual selection (or the current file) to that session as an `@file#L10-20` mention, then focus the Claude pane so you can type straight away. |
+| `<leader>cla` / `<leader>cld` | Accept / reject the diff Claude is proposing. Equivalent to `:w` / `:q` in the diff buffer. An accepted diff reloads the buffer automatically. |
 
 **autocmds**
 
@@ -304,6 +304,8 @@ Implementation: `scripts/claude-nvim-helper.sh` (resume-or-create against the fi
 | Loaded eagerly | The plugin spec sets `lazy = false`, because the server starts inside `setup()`. Lazy-loading it on a keymap would race: `claude --ide` would find no lock file. |
 | Local only | The server binds `127.0.0.1`. The lock file (mode `0600`, in a `0700` directory) carries a 128-bit CSPRNG token, checked with a constant-time compare during the WebSocket handshake. The plugin reports no telemetry. |
 | The setup helper stays out of it | `<leader>cln` passes neither `--ide` nor a port, and `autoConnectIde` is off, so the read-only setup helper never attaches and never captures a diff meant for the project you are editing. |
+| Focus follows a send | The plugin's `focus_after_send` is inert with `provider = "none"`, since Claude runs outside Neovim. A `User ClaudeCodeSendComplete` autocmd focuses the pane recorded by `<leader>clc` instead, falling back to tmux `{last}` if you launched Claude by hand. |
+| Accepted diffs reload the buffer | Neovim hands the accepted contents back to the CLI, which writes the file *after* it asks Neovim to close the diff; the plugin's own reload waits a fixed 100 ms for that write and loses the race on anything slow. So on `User ClaudeCodeDiffClosed` we poll until the file on disk diverges from the buffer, then re-read it with the cursor preserved. Modified buffers are skipped, so unsaved work is never clobbered, and a rejected diff never diverges, so it costs nothing. `<leader>r` remains the manual override. |
 
 Implementation: `lua/plugins/claude.lua` (the plugin spec and the `cls` / `cla` / `cld` maps), `scripts/claude-code.sh` (the `--ide` launcher), and `lua/config/claude.lua` (tmux pane management for both panes).
 
