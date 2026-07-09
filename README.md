@@ -274,10 +274,11 @@ For questions *about this Neovim setup* while editing any project, `<leader>cl` 
 
 | Behavior | Detail |
 | --- | --- |
-| Pinned, resumable thread | Always resumes one fixed session id, so follow-ups are remembered, it adds only a single entry to `claude --resume`, and it never mixes with the ad-hoc config-dev sessions that also live in `~/.config/nvim`. |
+| Pinned, resumable thread | Always resumes one fixed session id, generated for this helper alone, so follow-ups are remembered, it adds only a single entry to `claude --resume`, and it never mixes with the ad-hoc config-dev sessions that also live in `~/.config/nvim`. |
+| Tuned for short answers | The launcher passes `--append-system-prompt` on every run, asking Claude to lead with the exact keystroke or command, stay within about five lines, and answer from this config rather than from generic Neovim advice. The prompt lives in the launcher rather than in `CLAUDE.md` so that it shapes only this helper. |
 | Ephemeral pane | Focus it with `<C-j>` (vim-tmux-navigator); it closes when you exit Claude (`Ctrl-D`) and Neovim reclaims the space. Re-invoking refocuses the existing pane instead of stacking a new one. Requires Neovim running inside tmux. |
 
-Implementation: `scripts/claude-nvim-helper.sh` (resume-or-create against the fixed session id) and `lua/config/claude.lua` (the `:Claude` command, `<leader>cl` map, and pane management).
+Implementation: `scripts/claude-nvim-helper.sh` (resume-or-create against the fixed session id, plus the system prompt) and `lua/config/claude.lua` (the `:Claude` command, `<leader>cl` map, and pane management). If you change the session id, first confirm it is unused with `ls ~/.claude/projects/*/<new-id>.jsonl` — an id that already has a session file will silently resume that conversation instead of starting the helper thread.
 
 ### Markdown
 
