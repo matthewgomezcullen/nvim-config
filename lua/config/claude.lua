@@ -26,7 +26,7 @@ local function open_helper()
 end
 
 vim.api.nvim_create_user_command("Claude", open_helper, { desc = "Ask Claude about the NV setup" })
-vim.keymap.set("n", "<leader>cl", open_helper, { desc = "Ask Claude about the NV setup" })
+vim.keymap.set("n", "<leader>cln", open_helper, { desc = "Ask Claude about the NV setup" })
 
 -- Allow lowercase `:claude` -> `:Claude` (user commands must be capitalized; this only
 -- expands when `claude` is the entire command line).

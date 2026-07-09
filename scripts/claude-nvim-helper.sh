@@ -45,8 +45,8 @@ session_file="$HOME/.claude/projects/$slug/$SESSION_ID.jsonl"
 
 if [ -f "$session_file" ]; then
   # Continue the one helper thread in place.
-  exec claude --append-system-prompt "$SYSTEM_PROMPT" --resume "$SESSION_ID"
+  exec claude --model sonnet --append-system-prompt "$SYSTEM_PROMPT" --resume "$SESSION_ID"
 else
   # First run: create it with the fixed id.
-  exec claude --append-system-prompt "$SYSTEM_PROMPT" --session-id "$SESSION_ID"
+  exec claude --model sonnet --append-system-prompt "$SYSTEM_PROMPT" --session-id "$SESSION_ID"
 fi

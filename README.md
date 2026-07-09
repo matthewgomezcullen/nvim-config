@@ -63,7 +63,7 @@ See the configurations I use below.
 | `<leader>ma` | Add cursors for every match of the word under the cursor or the visual selection. |
 | `<leader>mn` / `<leader>mN` | Add the next / previous matching cursor. |
 | `<leader>ms` / `<leader>mS` | Skip the next / previous matching cursor. |
-| `<leader>cl` | Open a dedicated, resumable Claude session in a small tmux pane below Neovim for quick questions about this Neovim setup. Also available as `:Claude`. See [Agents](#agents). |
+| `<leader>cln` | Open a dedicated, resumable Claude session in a small tmux pane below Neovim for quick questions about this Neovim setup. Also available as `:Claude`. See [Agents](#agents). |
 
 **autocmds**
 
@@ -270,15 +270,16 @@ To *really* do everything using Neovim+Tmux, we need the right applications exec
 
 Use the standard Claude Code CLI or Codex CLI.
 
-For questions *about this Neovim setup* while editing any project, `<leader>cl` (or `:Claude`) opens a dedicated Claude session in a small tmux pane below Neovim. It always runs cwd'd in `~/.config/nvim`, so Claude can read the config and answer setup questions — e.g. "how do I go to the implementation of the word under my cursor in Python?" — independent of whatever project your main session is focused on.
+For questions *about this Neovim setup* while editing any project, `<leader>cln` (or `:Claude`) opens a dedicated Claude session in a small tmux pane below Neovim. It always runs cwd'd in `~/.config/nvim`, so Claude can read the config and answer setup questions — e.g. "how do I go to the implementation of the word under my cursor in Python?" — independent of whatever project your main session is focused on. `<leader>cl` is a prefix reserved for Claude helpers, so this one takes `n`, for Neovim.
 
 | Behavior | Detail |
 | --- | --- |
 | Pinned, resumable thread | Always resumes one fixed session id, generated for this helper alone, so follow-ups are remembered, it adds only a single entry to `claude --resume`, and it never mixes with the ad-hoc config-dev sessions that also live in `~/.config/nvim`. |
 | Tuned for short answers | The launcher passes `--append-system-prompt` on every run, asking Claude to lead with the exact keystroke or command, stay within about five lines, and answer from this config rather than from generic Neovim advice. The prompt lives in the launcher rather than in `CLAUDE.md` so that it shapes only this helper. |
+| Pinned to Sonnet | The launcher passes `--model sonnet`. These are short lookups against a small config, so the faster model is the better trade, and it leaves the model you pick for your main session untouched. |
 | Ephemeral pane | Focus it with `<C-j>` (vim-tmux-navigator); it closes when you exit Claude (`Ctrl-D`) and Neovim reclaims the space. Re-invoking refocuses the existing pane instead of stacking a new one. Requires Neovim running inside tmux. |
 
-Implementation: `scripts/claude-nvim-helper.sh` (resume-or-create against the fixed session id, plus the system prompt) and `lua/config/claude.lua` (the `:Claude` command, `<leader>cl` map, and pane management). If you change the session id, first confirm it is unused with `ls ~/.claude/projects/*/<new-id>.jsonl` — an id that already has a session file will silently resume that conversation instead of starting the helper thread.
+Implementation: `scripts/claude-nvim-helper.sh` (resume-or-create against the fixed session id, plus the model and system prompt) and `lua/config/claude.lua` (the `:Claude` command, `<leader>cln` map, and pane management). If you change the session id, first confirm it is unused with `ls ~/.claude/projects/*/<new-id>.jsonl` — an id that already has a session file will silently resume that conversation instead of starting the helper thread.
 
 ### Markdown
 
