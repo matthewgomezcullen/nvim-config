@@ -9,6 +9,16 @@ This page outlines my learning lessons and recommendations for using Neovim. I a
 
 Install [Neovim](https://neovim.io/). Run it with `nvim`. Navigate files as you would with Vim. Create a config file with `sudo mkdir ~/.config/nvim` and `sudo touch `~/config/nvim/init.lua`. **Lua** is a lightweight programming language used for Neovim plugins.
 
+## Dependencies
+
+A few features shell out to command-line tools. The rest of this page introduces each one where it is used, but these two are needed up front:
+
+```bash
+brew install tmux fzf
+```
+
+[**tmux**](#tmux) hosts the Claude panes. [**fzf**](https://github.com/junegunn/fzf) is a command-line fuzzy finder: you pipe it a list, it draws an interactive filterable menu, and it prints back what you chose. `<leader>cln` uses it to pick between past questions about this config — see [Agents](#agents).
+
 The first Lua program we will require is **Lazy**. Lazy is a plug-in manager for Neovim. Follow the “Structured Setup” of the [installation page](https://lazy.folke.io/installation). Now we can add basic packages that we require. Note, your directory structure should be as so:
 
 ```bash
@@ -63,7 +73,7 @@ See the configurations I use below.
 | `<leader>ma` | Add cursors for every match of the word under the cursor or the visual selection. |
 | `<leader>mn` / `<leader>mN` | Add the next / previous matching cursor. |
 | `<leader>ms` / `<leader>mS` | Skip the next / previous matching cursor. |
-| `<leader>cln` | Open a dedicated, resumable Claude session in a small tmux pane below Neovim for quick questions about this Neovim setup. Also available as `:Claude`. See [Agents](#agents). |
+| `<leader>cln` | Open a picker over past questions about this Neovim setup, in a small tmux pane below Neovim. Resume one, or ask a new one in its own session. Also available as `:Claude`. See [Agents](#agents). |
 | `<leader>clc` | Open the project Claude Code session in a tmux pane to the left, connected to this Neovim. Also available as `:ClaudeProject`. See [Agents](#agents). |
 | `<leader>cls` | Send the visual selection (or the current file) to that session as an `@file#L10-20` mention, then focus the Claude pane so you can type straight away. |
 | `<leader>cla` / `<leader>cld` | Accept / reject the diff Claude is proposing. Equivalent to `:w` / `:q` in the diff buffer. An accepted diff reloads the buffer automatically. |
@@ -281,16 +291,30 @@ To *really* do everything using Neovim+Tmux, we need the right applications exec
 
 Use the standard Claude Code CLI or Codex CLI.
 
-For questions *about this Neovim setup* while editing any project, `<leader>cln` (or `:Claude`) opens a dedicated Claude session in a small tmux pane below Neovim. It always runs cwd'd in `~/.config/nvim`, so Claude can read the config and answer setup questions — e.g. "how do I go to the implementation of the word under my cursor in Python?" — independent of whatever project your main session is focused on. `<leader>cl` is a prefix reserved for Claude helpers, so this one takes `n`, for Neovim.
+For questions *about this Neovim setup* while editing any project, `<leader>cln` (or `:Claude`) opens a Claude session in a small tmux pane below Neovim. It always runs cwd'd in `~/.config/nvim`, so Claude can read the config and answer setup questions — e.g. "how do I go to the implementation of the word under my cursor in Python?" — independent of whatever project your main session is focused on. `<leader>cl` is a prefix reserved for Claude helpers, so this one takes `n`, for Neovim.
+
+The pane opens on an [fzf](https://github.com/junegunn/fzf) picker listing the questions asked before, one row per session:
+
+| Key | Effect |
+| --- | --- |
+| `enter`, on a row | Resume that session. |
+| `enter`, when the query matched nothing | Start a new session, taking the query as the first question. |
+| `alt-enter` | Start a new session from the query even if rows matched. |
+| `ctrl-x` | Forget the highlighted row. The registry entry goes; the transcript on disk stays. |
+| `esc` | Close the pane. |
+
+`ctrl-x` rather than `ctrl-d` for forget, because `Ctrl-D` already means "exit Claude" and a destructive second meaning one keystroke away invites muscle-memory mistakes.
 
 | Behavior | Detail |
 | --- | --- |
-| Pinned, resumable thread | Always resumes one fixed session id, generated for this helper alone, so follow-ups are remembered, it adds only a single entry to `claude --resume`, and it never mixes with the ad-hoc config-dev sessions that also live in `~/.config/nvim`. |
+| One session per question | Every question opens its own session id, so no question spends input tokens re-sending an unrelated question's history. Past sessions stay on disk and remain resumable from the picker. |
 | Tuned for short answers | The launcher passes `--append-system-prompt` on every run, asking Claude to lead with the exact keystroke or command, stay within about five lines, and answer from this config rather than from generic Neovim advice. The prompt lives in the launcher rather than in `CLAUDE.md` so that it shapes only this helper. |
 | Pinned to Sonnet | The launcher passes `--model sonnet`. These are short lookups against a small config, so the faster model is the better trade, and it leaves the model you pick for your main session untouched. |
-| Ephemeral pane | Focus it with `<C-j>` (vim-tmux-navigator); it closes when you exit Claude (`Ctrl-D`) and Neovim reclaims the space. Re-invoking refocuses the existing pane instead of stacking a new one. Requires Neovim running inside tmux. |
+| Persistent pane | Focus it with `<C-j>` (vim-tmux-navigator). Exiting Claude (`Ctrl-D`) returns to the picker rather than closing the pane; `esc` from the picker closes it and Neovim reclaims the space. Re-invoking refocuses the existing pane instead of stacking a new one. Requires Neovim running inside tmux. |
 
-Implementation: `scripts/claude-nvim-helper.sh` (resume-or-create against the fixed session id, plus the model and system prompt) and `lua/config/claude.lua` (the `:Claude` command, `<leader>cln` map, and pane management). If you change the session id, first confirm it is unused with `ls ~/.claude/projects/*/<new-id>.jsonl` — an id that already has a session file will silently resume that conversation instead of starting the helper thread.
+The registry is a CSV at `${XDG_STATE_HOME:-~/.local/state}/claude-nvim-helper/sessions.csv`, most-recently-used first, one `<uuid>,<question>` row per session. It sits outside this repo on purpose: the questions are personal state, not configuration, and must never be committed. Rows are split on the *first* comma — a uuid contains none — so a question may hold commas, quotes and apostrophes without escaping. Before each render the picker drops rows whose transcript has gone, since Claude deletes transcripts once they pass `cleanupPeriodDays` and `--resume` on a missing id errors out.
+
+Implementation: `scripts/claude-nvim-helper.sh` (the picker, the registry, the model and system prompt) and `lua/config/claude.lua` (the `:Claude` command, `<leader>cln` map, and pane management).
 
 #### Editor integration for the project session
 
