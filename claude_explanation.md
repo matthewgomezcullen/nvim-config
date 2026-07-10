@@ -110,7 +110,7 @@ tmux `focus-events` is **off** on this machine. Any design built on `FocusGained
 
 **Adopt the plugin; do not rebuild it.** The @-mention direction is nearly free, because the CLI parses the mention syntax itself. Native diffs are not: roughly 5,000 lines against an unpublished, drifting protocol, of which about 2,100 is WebSocket, 345 is lockfile and auth, and 2,480 is the blocking-diff state machine. That cost asymmetry decided the question. Adopting the plugin while refusing its UI captures the expensive half and pays nothing for the cheap half.
 
-**The Q&A helper is deliberately not IDE-connected.** `<leader>cln` opens a separate, Sonnet-pinned, fzf-picked session, always cwd'd in `~/.config/nvim`. If it also held an IDE connection, it could capture `openDiff` calls intended for the project you are actually editing. Two Claudes, one wire: you want exactly one of them holding it.
+**The Q&A helper is deliberately not IDE-connected.** `<leader>cln` opens a separate, Opus-pinned, fzf-picked session, always cwd'd in `~/.config/nvim`. If it also held an IDE connection, it could capture `openDiff` calls intended for the project you are actually editing. Two Claudes, one wire: you want exactly one of them holding it.
 
 **Do not touch plugin internals.** `reload_file_buffers_manual` exists and would have been a one-liner. It is not public API, and the plugin is beta. We used the documented `User` events instead.
 

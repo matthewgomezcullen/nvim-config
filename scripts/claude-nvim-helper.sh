@@ -119,11 +119,11 @@ registry_forget() {
 # `--` so a question opening with '-' is not parsed as a flag. `|| true` so quitting Claude
 # with Ctrl-C (exit 130) does not take the picker down with it under `set -e`.
 claude_new() {
-  claude --model sonnet --append-system-prompt "$SYSTEM_PROMPT" --session-id "$1" -- "$2" || true
+  claude --model opus --append-system-prompt "$SYSTEM_PROMPT" --session-id "$1" -- "$2" || true
 }
 
 claude_resume() {
-  claude --model sonnet --append-system-prompt "$SYSTEM_PROMPT" --resume "$1" || true
+  claude --model opus --append-system-prompt "$SYSTEM_PROMPT" --resume "$1" || true
 }
 
 cd "$CONFIG_DIR"

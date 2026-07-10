@@ -1,6 +1,6 @@
 -- Claude helpers, each in its own tmux pane beside Neovim.
 --
---   <leader>cln  Quick questions about this Neovim setup. A pinned, Sonnet-backed session
+--   <leader>cln  Quick questions about this Neovim setup. A pinned, Opus-backed session
 --                always cwd'd in ~/.config/nvim (see scripts/claude-nvim-helper.sh).
 --                Deliberately NOT connected to the IDE server: it is a read-only Q&A pane,
 --                and letting it capture diffs for the project you are editing would confuse.
