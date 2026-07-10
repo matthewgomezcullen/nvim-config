@@ -39,6 +39,7 @@ Under `config/`, we add config files for Neovim native configurations. `lazy.lua
 └── lua/
     ├── config/
     │   ├── init.lua
+    │   ├── lazy.lua
     │   ├── options.lua
     │   ├── keymaps.lua
     │   └── autocmds.lua
@@ -102,6 +103,7 @@ LSP configurations sit in the `lsp` config file.
 └── lua/
     ├── config/
     │   ├── init.lua
+    │   ├── lazy.lua
     │   ├── options.lua
     │   ├── keymaps.lua
     │   └── autocmds.lua
