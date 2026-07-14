@@ -229,6 +229,8 @@ The `python` treesitter parser is enabled for syntax highlighting. Format-on-sav
 | `:DiffviewFileHistory` | Commit history for the whole repo |
 | `:DiffviewClose` | Close the diffview |
 
+`<leader>go` opens the diffview (`:DiffviewOpen`) and `<leader>gc` closes it (`:DiffviewClose`).
+
 Inside the diff view, `<tab>` / `<s-tab>` navigate between files, and `s` stages or unstages the highlighted file.
 
 ### `claude`
