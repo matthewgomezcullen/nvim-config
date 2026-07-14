@@ -7,6 +7,10 @@
 --   <leader>clc  The project session, connected to this Neovim over the Claude Code IDE
 --                protocol (see scripts/claude-code.sh), so it opens native diffs and
 --                receives the @-mentions that <leader>cls sends.
+--   <leader>clr  Resume the most recent project conversation in this cwd (claude --continue),
+--                reusing the same pane as <leader>clc.
+--   <leader>clf  Send the current file to the project session as a whole-file @-mention,
+--                then focus its pane.
 --
 -- Focus a pane with vim-tmux-navigator; it closes when you exit Claude (Ctrl-D).
 
@@ -58,23 +62,38 @@ local function nvim_helper()
   open_pane("@claude_nvim_pane", { "-v", "-l", "15" }, { scripts .. "/claude-nvim-helper.sh" })
 end
 
-local function project_session()
+local function project_session(resume)
   -- Pin the port so `claude --ide` attaches to *this* Neovim, rather than declining
   -- because another instance is also advertising an IDE.
   local ok, claudecode = pcall(require, "claudecode")
   local port = ok and claudecode.state and claudecode.state.port
-  local cmd = { scripts .. "/claude-code.sh" }
-  if port then
-    table.insert(cmd, tostring(port))
+  -- Always pass the port slot (empty when unknown) so claude-code.sh can shift it off and
+  -- forward the resume flag that follows.
+  local cmd = { scripts .. "/claude-code.sh", tostring(port or "") }
+  if resume then
+    table.insert(cmd, "--continue") -- reopen the most recent conversation in this cwd
   end
   open_pane("@claude_code_pane", { "-h", "-b", "-l", "80", "-c", vim.fn.getcwd() }, cmd)
 end
 
+-- Send the current file to the project session as a whole-file @-mention, then focus the
+-- pane so you can type your prompt (mirrors <leader>cls after a selection). ClaudeCodeAdd
+-- expands `%` to the current buffer and sends it with no line range.
+local function send_current_file()
+  vim.cmd("ClaudeCodeAdd %")
+  focus_pane("@claude_code_pane")
+end
+
 vim.api.nvim_create_user_command("Claude", nvim_helper, { desc = "Ask Claude about the NV setup" })
-vim.api.nvim_create_user_command("ClaudeProject", project_session, { desc = "Open the project Claude Code session" })
+-- Wrap project_session: user-command callbacks receive an opts *table*, which is truthy and
+-- would wrongly trigger `resume`. The keymap callbacks are wrapped too for symmetry.
+vim.api.nvim_create_user_command("ClaudeProject", function() project_session() end, { desc = "Open the project Claude Code session" })
+vim.api.nvim_create_user_command("ClaudeProjectResume", function() project_session(true) end, { desc = "Resume the previous project Claude Code session" })
 
 vim.keymap.set("n", "<leader>cln", nvim_helper, { desc = "Claude: ask about this Neovim setup" })
-vim.keymap.set("n", "<leader>clc", project_session, { desc = "Claude: project session (IDE-connected)" })
+vim.keymap.set("n", "<leader>clc", function() project_session() end, { desc = "Claude: project session (IDE-connected)" })
+vim.keymap.set("n", "<leader>clr", function() project_session(true) end, { desc = "Claude: resume previous project session" })
+vim.keymap.set("n", "<leader>clf", send_current_file, { desc = "Claude: send current file as @-mention" })
 
 -- Allow lowercase `:claude` -> `:Claude` (user commands must be capitalized; this only
 -- expands when `claude` is the entire command line).
