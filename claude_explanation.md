@@ -125,17 +125,6 @@ tmux `focus-events` is **off** on this machine. Any design built on `FocusGained
 | `<leader>cld` | reject the open diff |
 | `<leader>r` | manual buffer refresh, still there as an override |
 
-## Questions an interviewer would push on
-
-**Why is `openDiff` blocking at all, rather than a notification plus a callback?** Because Claude needs the result to decide what to do next, and the agent loop is synchronous. A callback would require the CLI to hold and correlate pending edit state across turns. Blocking pushes that state onto the coroutine, where the language manages it.
-
-**Why does the CLI write the file rather than the editor?** Because the editor might not have the buffer open, and the CLI must produce the same result either way. The cost is the write-after-`close_tab` race in Component 4.
-
-**Why a lock file rather than a fixed port or a Unix socket?** A fixed port collides across instances. The lock file carries the workspace folders and the auth token alongside the port, so discovery and authorization are one filesystem read, and `0600` does the access control for free.
-
-**What breaks if two Neovims are open?** Nothing, because of `CLAUDE_CODE_SSE_PORT`. Without it, `--ide` sees two lock files, cannot tell which one you meant, and declines to connect.
-
-**What happens if you send while Claude is disconnected?** `ClaudeCodeSendComplete` only fires while connected, so nothing is focused and nothing is sent. This is acceptable: there is no pane to type into yet.
 
 ## Source map
 
