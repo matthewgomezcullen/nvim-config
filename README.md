@@ -349,7 +349,7 @@ Two caveats. The wire protocol is not published by Anthropic and `claudecode.nvi
 
 | Command / event | Effect |
 | --- | --- |
-| `:MoRender` | Save the buffer if modified, then open it in the browser via `mo`. |
+| `:MoRender` (`<leader>mdr`) | Save the buffer if modified, then open it in the browser via `mo`. `<leader>md` shows as the "Keybinds for Markdown" group in which-key. |
 | Buffer deleted (`:bd`) | Remove the file from mo's session (`mo --close`) so it stops lingering in the sidebar. |
 | Quit Neovim (`:q` / `:qa`) | Remove every rendered file from mo's session on exit. |
 

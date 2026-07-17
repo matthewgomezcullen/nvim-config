@@ -58,3 +58,13 @@ vim.api.nvim_buf_create_user_command(0, 'MoRender', function()
 end, {
     desc = 'Render the current Markdown file with mo',
 })
+
+vim.keymap.set('n', '<leader>mdr', '<cmd>MoRender<cr>', {
+    buffer = 0,
+    desc = 'Render the current Markdown file with mo',
+})
+
+local ok, wk = pcall(require, 'which-key')
+if ok then
+    wk.add({ '<leader>md', group = 'Keybinds for Markdown', buffer = 0 })
+end
