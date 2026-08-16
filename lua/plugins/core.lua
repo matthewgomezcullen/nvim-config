@@ -20,6 +20,7 @@ return {
                             vim.fn.jobstart({ "open", node.absolute_path }, { detach = true })
                         end
                     end, { buffer = bufnr, noremap = true, silent = true, nowait = true, desc = "nvim-tree: Open with default app" })
+                    vim.keymap.set("n", "<leader>]", api.tree.change_root_to_node, { buffer = bufnr, noremap = true, silent = true, nowait = true, desc = "nvim-tree: CD into directory" })
                 end,
             }
         end,
