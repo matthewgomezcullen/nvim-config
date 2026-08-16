@@ -345,13 +345,19 @@ Two caveats. The wire protocol is not published by Anthropic and `claudecode.nvi
 
 [**mo**](https://github.com/k1LoW/mo) renders Markdown in the browser with live-reload, and handles GitHub-flavored Markdown, KaTeX math, and Mermaid diagrams. Install with `brew install k1low/tap/mo`. It runs as a background server on `localhost:6275` that serves every opened file from a single page — re-running `mo <file>` adds to the running session rather than starting a new one. Inspect or tear down the session with `mo --status` / `mo --shutdown`.
 
-`ftplugin/markdown.lua` wires `mo` into Neovim with a buffer-local `:MoRender` command plus automatic cleanup:
+`ftplugin/markdown.lua` wires `mo` into Neovim with a buffer-local `:MoRender` command plus automatic cleanup, and adds PDF rendering via [**pandoc**](https://pandoc.org) (`brew install pandoc`):
 
 | Command / event | Effect |
 | --- | --- |
 | `:MoRender` (`<leader>mdr`) | Save the buffer if modified, then open it in the browser via `mo`. `<leader>md` shows as the "Keybinds for Markdown" group in which-key. |
+| `:MdPdf` (`<leader>mdp`) | Save the buffer if modified, then render it to a PDF beside the source file with `pandoc --pdf-engine=xelatex`, and open the result in the default PDF app. xelatex comes from the MacTeX install VimTeX already relies on. The run is async, so a slow LaTeX pass doesn't block the editor, and pandoc's stderr is surfaced via `vim.notify` on failure. |
+| `:MdPdfWatch` (`<leader>mdw`) | Toggle live compilation for the buffer: render once (opening the PDF), then re-render on every save. Save renders are quiet — only failures notify — and toggling off stops the watch. |
 | Buffer deleted (`:bd`) | Remove the file from mo's session (`mo --close`) so it stops lingering in the sidebar. |
 | Quit Neovim (`:q` / `:qa`) | Remove every rendered file from mo's session on exit. |
+
+Two variables are passed to pandoc to fix its defaults. `geometry:margin=0.75in` replaces LaTeX's article-class margins, which are wide enough (~2in per side) that wide tables get squeezed until their cells overlap — this config's own README drops from 15 pages to 10. `monofont:JetBrainsMono Nerd Font Mono` replaces Latin Modern Mono, which has no box-drawing or Nerd Font glyphs and silently omits them from code blocks; swap in `Menlo` (a macOS system font) if the Nerd Font is ever uninstalled, since xelatex fails outright on a missing font.
+
+Live compilation hangs off `BufWritePost` rather than a filesystem watcher: pandoc reads from disk, so an unsaved buffer has nothing new to render, and reusing the save debounces for free. A save landing while pandoc is still running is coalesced into a single re-run afterwards, so two renders never race to write the same PDF. The viewer has to reload on its own — Preview and Skim both pick up the new file automatically, though Preview will not if the PDF has unsaved annotations.
 
 `mo` is a background server with no signal for the browser being closed, so cleanup is tied to the Neovim buffer lifecycle instead. Closing only the browser tab leaves the file in mo until you delete the buffer or quit Neovim. `BufDelete` (not `BufUnload`) is used so reloading the file with `:e` doesn't drop it from the session.
 
