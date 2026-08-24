@@ -70,6 +70,7 @@ See the configurations I use below.
 | `<leader>]` (in `nvim-tree`) | Set the directory under the cursor as the new tree root (CD). `-` goes back up. |
 | `vim.keymap.set("n", "<leader>ff", ...)` | Find files with Telescope, including hidden and ignored files. |
 | `vim.keymap.set("n", "<leader>fg", ...)` | Search text with Telescope live grep. |
+| `vim.keymap.set("v", "<leader>y", '"+y', ...)` | Yank the visual selection to the system clipboard (`"+y`). |
 | `vim.keymap.set("n", "j" / "k", ...)` | Move by screen lines with `gj` / `gk` when no count is given; counted motions keep normal line movement. |
 | `vim.keymap.set("n", "<Down>" / "<Up>", ...)` | Match the same screen-line behavior for the arrow keys. |
 | `<leader>ma` | Add cursors for every match of the word under the cursor or the visual selection. |
