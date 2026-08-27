@@ -123,7 +123,7 @@ LSP configurations sit in the `lsp` config file.
 
 | Package | Purpose (+ notes) | Configurations |
 | --- | --- | --- |
-| [nvim-tree](https://github.com/nvim-tree/nvim-tree.lua) | Better explorer than the default (**netrw**). | Remap `<C+k>` (Info) to avoid conflict with Tmux. |
+| [nvim-tree](https://github.com/nvim-tree/nvim-tree.lua) | Better explorer than the default (**netrw**). | Remap `<C+k>` (Info) to avoid conflict with Tmux. `modified.enable` plus `renderer.icons.show.modified` mark files with unwritten changes in the tree, like VS Code's dirty-tab dot. |
 | [conform.nvim](https://github.com/stevearc/conform.nvim) | Formatting. Built around external formatters. |  |
 | [which-key.nvim](https://github.com/folke/which-key.nvim) | Remember your keybinds. |  |
 | [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) | Extendable fuzzy finder to find, filter, preview, and pick items like files, strings, and LSP references |  |

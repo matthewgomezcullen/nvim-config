@@ -22,6 +22,18 @@ return {
                     end, { buffer = bufnr, noremap = true, silent = true, nowait = true, desc = "nvim-tree: Open with default app" })
                     vim.keymap.set("n", "<leader>]", api.tree.change_root_to_node, { buffer = bufnr, noremap = true, silent = true, nowait = true, desc = "nvim-tree: CD into directory" })
                 end,
+                -- Mark buffers with unwritten changes in the tree (like VS Code's
+                -- dirty-tab dot). renderer.icons.show.modified draws the icon.
+                modified = {
+                    enable = true,
+                },
+                renderer = {
+                    icons = {
+                        show = {
+                            modified = true,
+                        },
+                    },
+                },
             }
         end,
     },
