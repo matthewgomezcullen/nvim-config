@@ -210,7 +210,7 @@ The runner exits non-zero if any test fails, so it slots into CI or a pre-commit
 
 | Package | Purpose | Configurations |
 | --- | --- | --- |
-| [basedpyright](https://github.com/DetachHead/basedpyright) | Python type checker / LSP. Provides hover, go-to-def, completions, diagnostics. | `typeCheckingMode = "standard"`. Auto-installed via mason. Detects `.venv/`, `venv/`, conda envs, and `$VIRTUAL_ENV` automatically. |
+| [basedpyright](https://github.com/DetachHead/basedpyright) | Python type checker / LSP. Provides hover, go-to-def, completions, diagnostics. | `typeCheckingMode = "standard"`, `diagnosticMode = "workspace"` so diagnostics and `grn` renames cover the whole project, not just open files. Auto-installed via mason. Detects `.venv/`, `venv/`, conda envs, and `$VIRTUAL_ENV` automatically. |
 | [ruff](https://github.com/astral-sh/ruff) | Linter + formatter. Runs as both an LSP (diagnostics, code actions like organize-imports / fix-all) and as a `conform.nvim` formatter (`ruff_organize_imports` $\to$ `ruff_format`). | Hover disabled on the ruff LSP so basedpyright owns hover output. The same mason-installed `ruff` binary serves both roles. |
 
 The `python` treesitter parser is enabled for syntax highlighting. Format-on-save is not configured — run `:lua require("conform").format()` to format the current buffer.
