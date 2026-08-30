@@ -17,4 +17,14 @@ return {
             })
         end,
     },
+    {
+        "nvim-treesitter/nvim-treesitter-context",
+        event = "BufReadPost",
+        opts = {
+            max_lines = 3,          -- at most 3 sticky lines, so nested code can't eat the window
+            multiline_threshold = 1, -- collapse a multi-line signature to its first line
+            trim_scope = "outer",   -- when over max_lines, drop the outermost context first
+            separator = "-",        -- underline the sticky region
+        },
+    },
 }

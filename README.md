@@ -130,6 +130,7 @@ LSP configurations sit in the `lsp` config file.
 | [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) | Provides server configurations for the LSP. |  |
 | [mason.nvim](https://github.com/mason-org/mason.nvim) | Portable package manager for LSP servers, DAP servers, linters, and formatters. |  |
 | [multicursor.nvim](https://github.com/jake-stewart/multicursor.nvim) | Multiple cursors for editing repeated words or selections. | Use `<leader>ma` to add cursors for all matches, then edit normally. |
+| [nvim-treesitter-context](https://github.com/nvim-treesitter/nvim-treesitter-context) | Sticky scroll: pins the enclosing function / class / block to the top of the window while you scroll through it. The VS Code feature of the same name. Spec lives in `plugins/treesitter.lua`. | `max_lines = 3` caps the sticky region so deeply nested code can't eat the window, with `trim_scope = "outer"` dropping the outermost frame first when it overflows. `multiline_threshold = 1` collapses a wrapped signature to its first line. `separator = "-"` draws the boundary rather than relying on the colorscheme underlining it. Toggle with `:TSContext toggle` (`enable` / `disable` too); `:lua require("treesitter-context").go_to_context()` jumps to the top of the current context. Only shows for filetypes with a parser installed (see [`markdown`](#markdown)). |
 
 ### `tmux`
 
