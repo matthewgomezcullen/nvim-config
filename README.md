@@ -60,6 +60,7 @@ See the configurations I use below.
 | vim.opt.expandtab = true | Use spaces instead of tabs |
 | vim.opt.tabstop = 4 | How wide a tab looks |
 | vim.opt.shiftwidth = 4 | Indent size |
+| vim.opt.exrc = true | Load a `.nvim.lua` from the project root on startup, for per-project overrides (VS Code's `.vscode/settings.json`). Neovim prompts once to trust each file; `:trust` manages the list. E.g. a project-local theme: `vim.cmd.colorscheme("tokyonight-day")`. |
 
 **keymaps**
 
@@ -131,6 +132,12 @@ LSP configurations sit in the `lsp` config file.
 | [mason.nvim](https://github.com/mason-org/mason.nvim) | Portable package manager for LSP servers, DAP servers, linters, and formatters. |  |
 | [multicursor.nvim](https://github.com/jake-stewart/multicursor.nvim) | Multiple cursors for editing repeated words or selections. | Use `<leader>ma` to add cursors for all matches, then edit normally. |
 | [nvim-treesitter-context](https://github.com/nvim-treesitter/nvim-treesitter-context) | Sticky scroll: pins the enclosing function / class / block to the top of the window while you scroll through it. The VS Code feature of the same name. Spec lives in `plugins/treesitter.lua`. | `max_lines = 3` caps the sticky region so deeply nested code can't eat the window, with `trim_scope = "outer"` dropping the outermost frame first when it overflows. `multiline_threshold = 1` collapses a wrapped signature to its first line. `separator = "-"` draws the boundary rather than relying on the colorscheme underlining it. Toggle with `:TSContext toggle` (`enable` / `disable` too); `:lua require("treesitter-context").go_to_context()` jumps to the top of the current context. Only shows for filetypes with a parser installed (see [`markdown`](#markdown)). |
+
+### `colorscheme`
+
+| Package | Purpose | Configurations |
+| --- | --- | --- |
+| [tokyonight.nvim](https://github.com/folke/tokyonight.nvim) | Colorscheme. `vim.cmd.colorscheme("tokyonight-night")` in `plugins/colorscheme.lua` sets the default. | Variants `tokyonight-night` / `-storm` / `-moon` / `-day` need no extra install; switch by editing that call, or per project via a `.nvim.lua` (see `exrc` above). Transparency is off, so the colorscheme paints its own background — leaving `transparent = true` on with a light variant like `-day` shows the terminal's dark background everywhere except the lines the theme paints itself (`CursorLine`, floats). |
 
 ### `tmux`
 
