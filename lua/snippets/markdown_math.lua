@@ -154,6 +154,23 @@ local function body_to_nodes(body)
     return nodes
 end
 
+-- Nine triggers expand to themselves with a backslash in front (`in` -> `\in`,
+-- `pi` -> `\pi`, `neg` -> `\neg`, ...), so the result still ends in the
+-- trigger. `wordTrig` treats `\` as a word boundary, which leaves the
+-- expansion expandable again: every subsequent <Space> would prepend another
+-- backslash instead of inserting a space (`\in` -> `\\in` -> `\\\in`).
+-- Refusing to expand directly after a backslash also matches what the text
+-- means — mid-command is not the start of a new word.
+function M.not_after_backslash(line_to_cursor, matched_trigger)
+    local before = line_to_cursor:sub(1, #line_to_cursor - #(matched_trigger or ""))
+    return before:sub(-1) ~= "\\"
+end
+
+local function expandable_here(line_to_cursor, matched_trigger, captures)
+    return M.in_mathzone()
+        and M.not_after_backslash(line_to_cursor, matched_trigger, captures)
+end
+
 function M.build_snippets(path)
     local ls = require("luasnip")
     local s, f = ls.snippet, ls.function_node
@@ -164,7 +181,7 @@ function M.build_snippets(path)
         table.insert(out, s({
             trig = entry.trigger,
             wordTrig = true,
-        }, body_to_nodes(entry.body), { condition = M.in_mathzone }))
+        }, body_to_nodes(entry.body), { condition = expandable_here }))
     end
 
     -- {a}/{b} -> \frac{a}{b}, expanded on <Space>.
@@ -176,7 +193,7 @@ function M.build_snippets(path)
         f(function(_, snip)
             return "\\frac{" .. snip.captures[1] .. "}{" .. snip.captures[2] .. "}"
         end),
-    }, { condition = M.in_mathzone }))
+    }, { condition = expandable_here }))
 
     return out
 end
@@ -247,20 +264,51 @@ local function install_buffer_keymaps(bufnr)
     })
 end
 
+-- The math-zone node types at the top of this file come from the LaTeX
+-- grammar, which Markdown reaches through an injection and .tex files use
+-- directly, so the same snippets and keymaps work in both filetypes unchanged.
+M.filetypes = { "markdown", "tex" }
+local filetypes = M.filetypes
+
+--- True when `bufnr` (default: current) is a filetype this module is active in.
+--- Exported so callers outside the module — the blink.cmp <Tab> chain — gate on
+--- the same list rather than a second hard-coded copy that can drift.
+function M.is_math_filetype(bufnr)
+    local ft = vim.bo[bufnr or 0].filetype
+    for _, f in ipairs(filetypes) do
+        if ft == f then
+            return true
+        end
+    end
+    return false
+end
+
 function M.setup()
     local ls = require("luasnip")
     local path = vim.fn.stdpath("config") .. "/snippets.txt"
-    ls.add_snippets("markdown", M.build_snippets(path), { key = "markdown_math" })
+
+    -- One shared snippet list under a single key: adding the same key twice
+    -- would drop the first registration.
+    local snippets = M.build_snippets(path)
+    local by_filetype = {}
+    for _, ft in ipairs(filetypes) do
+        by_filetype[ft] = snippets
+    end
+    ls.add_snippets(nil, by_filetype, { key = "markdown_math" })
 
     vim.api.nvim_create_autocmd("FileType", {
-        pattern = "markdown",
+        pattern = filetypes,
         callback = function(args)
             install_buffer_keymaps(args.buf)
         end,
     })
 
+    local wanted = {}
+    for _, ft in ipairs(filetypes) do
+        wanted[ft] = true
+    end
     for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-        if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == "markdown" then
+        if vim.api.nvim_buf_is_loaded(buf) and wanted[vim.bo[buf].filetype] then
             install_buffer_keymaps(buf)
         end
     end

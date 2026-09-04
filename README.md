@@ -149,29 +149,32 @@ LSP configurations sit in the `lsp` config file.
 
 | Package | Purpose |
 | --- | --- |
-| [vimtex](https://github.com/lervag/vimtex) | Filetype and syntax plugin for LaTeX files. |
+| [vimtex](https://github.com/lervag/vimtex) | Filetype and syntax plugin for LaTeX files. Its `init` also sets `vim.g.tex_flavor = "latex"`, so every `.tex` file gets filetype `tex` — see [below](#tex_flavor). |
 
 ### `markdown`
 
 | Package | Purpose | Configurations |
 | --- | --- | --- |
 | [render-markdown.nvim](https://github.com/MeanderingProgrammer/render-markdown.nvim) | Render markdown inside Neovim. |  |
-| [LuaSnip](https://github.com/L3MON4D3/LuaSnip) | Snippet engine. Powers the math-typing snippets below. | Loader at `lua/snippets/markdown_math.lua` populates the `markdown` filetype on startup. Expansion is triggered by `<Space>`; `<S-Space>` inserts a literal space without expanding. |
-| [nvim-autopairs](https://github.com/windwp/nvim-autopairs) | Autoclose `(`, `[`, `{`, `"`, etc. | `ts_config` includes a `markdown = {}` entry so the treesitter gate doesn't suppress pairing inside Markdown buffers. `$...$` and `$$...$$` are handled by a buffer-local `$` keymap in `markdown_math.lua`, not by autopairs. |
-| [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) (`main` branch) | Parsers for `markdown`, `markdown_inline`, `lua`, `latex`. Used both by `render-markdown.nvim` and by the math-zone detector. | Requires the `tree-sitter` CLI on `$PATH` — `brew install tree-sitter-cli`. Highlighting enabled via a `FileType` autocmd. |
-| [blink.cmp](https://github.com/Saghen/blink.cmp) (extension) | Wired into LuaSnip via `snippets = { preset = "luasnip" }`, with `snippets` added to the default source list. | `<Tab>` chain: `snippet_forward` → math-zone exit → `fallback`. Inside a snippet, advances tab stops; outside a snippet but inside math, jumps the cursor past the closing `$` / `$$`; otherwise normal Tab. `<S-Tab>` jumps back through snippet stops. |
+| [LuaSnip](https://github.com/L3MON4D3/LuaSnip) | Snippet engine. Powers the math-typing snippets below. | Loader at `lua/snippets/markdown_math.lua` populates the `markdown` and `tex` filetypes on startup. Expansion is triggered by `<Space>`; `<S-Space>` inserts a literal space without expanding. |
+| [nvim-autopairs](https://github.com/windwp/nvim-autopairs) | Autoclose `(`, `[`, `{`, `"`, etc. | `ts_config` includes a `markdown = {}` entry so the treesitter gate doesn't suppress pairing inside Markdown buffers. Two extra `tex`-only rules pair `\(`/`\)` and `\[`/`\]`; rules are sorted longest-start-pair first, so they win over the built-in `(`/`[`. `$...$` and `$$...$$` are handled by a buffer-local `$` keymap in `markdown_math.lua`, not by autopairs. |
+| [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) (`main` branch) | Parsers for `markdown`, `markdown_inline`, `lua`, `latex`, `python`. Used both by `render-markdown.nvim` and by the math-zone detector. | Requires the `tree-sitter` CLI on `$PATH` — `brew install tree-sitter-cli`. Highlighting enabled via a `FileType` autocmd, whose pattern lists **filetypes** (`markdown`, `lua`, `python`) while `install()` lists **parser names** (`latex`). `tex` is deliberately absent: `vim.treesitter.start()` clears `'syntax'` when it attaches, which would disable VimTeX's own syntax plugin. The math snippets don't need the highlighter — nvim-treesitter registers `tex` $\to$ `latex`, so `get_parser()` builds a parser on demand for `in_mathzone()`. |
+| [blink.cmp](https://github.com/Saghen/blink.cmp) (extension) | Wired into LuaSnip via `snippets = { preset = "luasnip" }`, with `snippets` added to the default source list. | `<Tab>` chain: `snippet_forward` → math-zone exit → `fallback`. Inside a snippet, advances tab stops; outside a snippet but inside math, jumps the cursor past the closing delimiter; otherwise normal Tab. The math-exit step gates on `markdown_math.is_math_filetype()` and returns a `<Cmd>` **string** rather than moving the cursor itself — blink applies this keymap with `expr = true`, and an expr mapping saves and restores the cursor position (`:h :map-expr`), so a direct move would be silently reverted. `<S-Tab>` jumps back through snippet stops. |
 
 #### Math typing
 
-Inside a `$...$` or `$$...$$` zone in a Markdown buffer, the following snippets and keymaps apply. Math-zone activation is gated by Treesitter (`latex_block`, `inline_formula`, `displayed_equation`, etc.), so typing `alpha` in prose stays literal.
+Inside a math zone in a Markdown or LaTeX buffer, the following snippets and keymaps apply. Math-zone activation is gated by Treesitter (`latex_block`, `inline_formula`, `displayed_equation`, `math_environment`, etc.), so typing `alpha` in prose stays literal. Markdown reaches the LaTeX grammar through an injection and `.tex` files use it directly, so the same triggers work in both — in `.tex` that also covers `\(...\)`, `\[...\]` and `\begin{align}`-style environments, not just `$...$` and `$$...$$`.
 
 Expansion model: type the trigger, then `<Space>` to expand. Use `<S-Space>` to insert a literal space without expanding.
+
+Expansion is also blocked directly after a `\`. Nine triggers (`in`, `ne`, `neg`, `mu`, `nu`, `pi`, `Pi`, `xi`, `Xi`) expand to themselves with a backslash in front, so the expansion still ends in the trigger — and `wordTrig` counts `\` as a word boundary. Without the guard, every `<Space>` after `\in` matched again and prepended another backslash (`\in` $\to$ `\\in` $\to$ `\\\in`) instead of inserting a space. The guard doubles as a correctness rule: mid-command is not the start of a new word.
 
 | Trigger | Expands to | Notes |
 | --- | --- | --- |
 | `^` | `^{\|}` | Direct insert-mode keymap (not a snippet). Type the exponent, then `<Right>` to exit. |
 | `_` | `_{\|}` | Subscript counterpart. |
 | `{a}/{b}<Space>` | `\frac{a}{b}` | Regex snippet — fires on `<Space>` once both braces are typed. |
+| `\(` / `\[` (`.tex` only) | `\(\|\)` / `\[\|\]` | nvim-autopairs rules, not snippets. `<BS>` on the opening delimiter deletes both halves. To close, `<Tab>` out — typing `\)` by hand inserts a literal one rather than jumping, because autopairs matches a closing delimiter on a single keypress and cannot retract the `\` already typed. |
 | ~90 user-defined triggers (see `snippets.txt`) | e.g. `al<Space>` $\to$ `\alpha`, `bi<Space>` $\to$ `\binom{\|}{}`, `gather<Space>` $\to$ `\begin{gather}\|\end{gather}` | Word-trigger semantics; the `<Space>` is consumed by the expansion. |
 
 Exiting a math zone:
@@ -180,7 +183,7 @@ Exiting a math zone:
 | --- | --- |
 | `$` at `$\|$` | Jump past closing `$`. |
 | `$` at `$$\|$$` | Jump past closing `$$`. |
-| `<Tab>` (no active snippet stop) | Jump past the closing `$` / `$$` of whichever math zone encloses the cursor. Inside an active snippet, `<Tab>` advances tab stops first. |
+| `<Tab>` (no active snippet stop) | Jump past the closing delimiter of whichever math zone encloses the cursor — `$`, `$$`, and in `.tex` also `\)`, `\]` and `\end{...}`. Inside an active snippet, `<Tab>` advances tab stops first, so escaping a just-expanded snippet can take one extra `<Tab>`. |
 
 #### `snippets.txt` format
 
@@ -201,11 +204,11 @@ bi:::\binom{#cursor}{#tab};
 gather:::\begin{gather}#cursor\end{gather};
 ```
 
-The loader (`lua/snippets/markdown_math.lua`) reads the file at startup, converts each entry into a LuaSnip snippet (expanded on `<Space>`, gated to math zones), and surfaces warnings in `:messages` for duplicate triggers or malformed lines (e.g. expansion ends in a bare `\`). Skipped entries are noted with their line number so they're easy to fix.
+The loader (`lua/snippets/markdown_math.lua`) reads the file at startup, converts each entry into a LuaSnip snippet (expanded on `<Space>`, gated to math zones and to positions not directly after a `\`), registers one shared snippet list against every filetype in its `filetypes` table (`markdown`, `tex`), and surfaces warnings in `:messages` for duplicate triggers or malformed lines (e.g. expansion ends in a bare `\`). Skipped entries are noted with their line number so they're easy to fix.
 
 #### Tests
 
-The math-typing module has a headless test suite covering math-zone detection, the `$` / `^` / `_` autopairs, space-triggered expansion, and math-zone exit. Run it with:
+The math-typing module has a headless test suite covering math-zone detection, the `$` / `^` / `_` autopairs, space-triggered expansion (including the after-`\` guard), and math-zone exit. Run it with:
 
 ```bash
 nvim --headless -u test/init.lua -c "luafile test/markdown_math_spec.lua"
@@ -372,6 +375,9 @@ Live compilation hangs off `BufWritePost` rather than a filesystem watcher: pand
 `mo` is a background server with no signal for the browser being closed, so cleanup is tied to the Neovim buffer lifecycle instead. Closing only the browser tab leaves the file in mo until you delete the buffer or quit Neovim. `BufDelete` (not `BufUnload`) is used so reloading the file with `:e` doesn't drop it from the session.
 
 ### LaTeX
+
+<a name="tex_flavor"></a>
+Neovim decides between the `tex` and `plaintex` filetypes by *reading* a `.tex` file: without a LaTeX marker such as `\documentclass` or `\begin{...}` near the top, it falls back to plain TeX and sets `plaintex`. A brand-new or short file therefore opens as `plaintex`, and anything keyed to `tex` — the math snippets, the `\(`/`\[` autopairs rules, VimTeX's own ftplugin — silently doesn't load. `vim.g.tex_flavor = "latex"` in `lua/plugins/latex.lua` makes `tex` the fallback instead, which is what VimTeX recommends.
 
 [**Skim**](https://skim-app.sourceforge.io/index.html) for rendering PDFs. Works with SyncTeX.
 

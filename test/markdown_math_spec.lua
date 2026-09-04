@@ -145,6 +145,28 @@ test("expands {3}/{4} to \\frac{3}{4} inside math", function()
     eq(line(1), "$\\frac{3}{4}$")
 end)
 
+-- Nine triggers (`in`, `pi`, `mu`, `neg`, ...) expand to themselves with a
+-- leading backslash, so the expansion still ends in the trigger. Without the
+-- not_after_backslash guard, each following <Space> re-expanded it and
+-- prepended another backslash instead of inserting a space.
+test("does not re-expand 'in' once it is already \\in", function()
+    setup({ "$\\in$" }, 1, 3)
+    feed("a ")
+    eq(line(1), "$\\in $")
+end)
+
+test("does not re-expand 'neg' once it is already \\neg", function()
+    setup({ "$\\neg$" }, 1, 4)
+    feed("a ")
+    eq(line(1), "$\\neg $")
+end)
+
+test("typing 'in' then two spaces gives one \\in and a space", function()
+    setup({ "$in$" }, 1, 2)
+    feed("a  ")
+    eq(line(1), "$\\in $")
+end)
+
 print("\n-- math zone exit --")
 
 -- exit_math_node leaves the cursor past the closing delimiter. We can only

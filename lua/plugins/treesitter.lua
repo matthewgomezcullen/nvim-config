@@ -9,8 +9,15 @@ return {
                 "markdown", "markdown_inline", "lua", "latex", "python",
             })
 
+            -- Deliberately no "tex": VimTeX brings its own syntax plugin, and
+            -- vim.treesitter.start() clears 'syntax' when it attaches, which
+            -- takes VimTeX's highlighting with it. The math snippets don't need
+            -- the highlighter — nvim-treesitter registers tex -> latex, so
+            -- get_parser() builds a parser on demand for in_mathzone().
+            -- ("latex" here would be a no-op anyway: it names the parser, not
+            -- the filetype.)
             vim.api.nvim_create_autocmd("FileType", {
-                pattern = { "markdown", "lua", "latex", "python" },
+                pattern = { "markdown", "lua", "python" },
                 callback = function()
                     pcall(vim.treesitter.start)
                 end,
