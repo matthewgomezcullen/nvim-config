@@ -52,11 +52,11 @@ These are asymmetric, and the asymmetry is the most interesting thing in the sys
 
 ### Neovim to Claude: a fire-and-forget notification
 
-`<leader>cls` runs `ClaudeCodeSend`, which calls `M.broadcast("at_mentioned", params)`. Look at the message it constructs: a `jsonrpc` field, a `method`, `params`, and **no `id`**. In JSON-RPC, omitting the `id` makes the message a notification: no reply, no correlation, no blocking. Claude simply finds `@path#L10-20` appended to its prompt.
+`:ClaudeCodeSend` calls `M.broadcast("at_mentioned", params)`. Look at the message it constructs: a `jsonrpc` field, a `method`, `params`, and **no `id`**. In JSON-RPC, omitting the `id` makes the message a notification: no reply, no correlation, no blocking. Claude simply finds `@path#L10-20` appended to its prompt.
 
 The CLI parses that mention syntax natively, with the regex `^([^#]+)(?:#L(\d+)(?:-(\d+))?)?`. This is why the send direction was essentially free to build: nothing had to be invented on either end.
 
-One mapping covers normal and visual mode, because `ClaudeCodeSend` is declared with `range = true`, so Vim hands it the visual selection when there is one.
+That regex is also why `<leader>clf` and `<leader>cls` no longer broadcast at all: they build the same `@path#L10-20` string, put it on the system clipboard, and focus the pane so you paste it yourself. A notification with no id has no failure signal — a stale socket drops the mention and tells nobody — whereas a mention you can see in the prompt before you hit enter either arrived or did not. The CLI cannot tell the two routes apart.
 
 ### Claude to Neovim: a blocking request
 
@@ -120,7 +120,8 @@ tmux `focus-events` is **off** on this machine. Any design built on `FocusGained
 | --- | --- |
 | `<leader>clc` | open or refocus the project session, IDE-connected |
 | `<leader>cln` | open or refocus the Neovim-config Q&A session, not IDE-connected |
-| `<leader>cls` | send the file or selection as an `@`-mention, then focus the Claude pane |
+| `<leader>clf` | copy an `@`-mention of the current file to the clipboard, then focus the Claude pane |
+| `<leader>cls` | the same, with the cursor line or the visual selection as a `#L` range |
 | `<leader>cla` | accept the open diff; the buffer reloads on its own |
 | `<leader>cld` | reject the open diff |
 | `<leader>r` | manual buffer refresh, still there as an override |

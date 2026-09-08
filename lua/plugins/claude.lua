@@ -12,8 +12,9 @@ return {
             log_level = "warn",
         },
         keys = {
-            -- ClaudeCodeSend is declared `range = true`, so one mapping covers both modes.
-            { "<leader>cls", "<cmd>ClaudeCodeSend<cr>", mode = { "n", "v" }, desc = "Claude: send selection as @-mention" },
+            -- <leader>clf / <leader>cls copy an @-mention to the clipboard instead of
+            -- broadcasting one (see lua/config/claude.lua), so :ClaudeCodeSend and
+            -- :ClaudeCodeAdd are deliberately left unmapped.
             { "<leader>cla", "<cmd>ClaudeCodeDiffAccept<cr>", desc = "Claude: accept diff" },
             { "<leader>cld", "<cmd>ClaudeCodeDiffDeny<cr>", desc = "Claude: reject diff" },
         },
