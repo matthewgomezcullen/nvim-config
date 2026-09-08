@@ -393,26 +393,13 @@ vim.g.vimtex_view_skim_activate = 1  -- bring Skim to foreground on forward sear
 
 Skim auto-reloads changed PDFs, so live preview works automatically once VimTeX compiles.
 
-**Backward search (Skim → Neovim)**
-
-Install [neovim-remote](https://github.com/mhinz/neovim-remote), which lets Skim send commands back to the running Neovim instance:
-
-```bash
-pip3 install neovim-remote
-```
-
-Then in **Skim → Settings → Sync**, set:
-
-| Field | Value |
-| --- | --- |
-| Preset | Custom |
-| Command | `nvr` |
-| Arguments | `--remote-silent +"%line" "%file"` |
+Backward search (⌘⇧click in Skim to jump to the source line) is deliberately not set up. Skim launches its sync command with no way to address a specific Neovim instance: the editor's server socket is an auto-generated path under `$TMPDIR` that changes on every restart, and both `nvr` and `nvim --server` respond to a failed connection by silently starting a *new* headless Neovim rather than reporting an error — so a misconfigured setup looks identical to a working one while every jump lands in an invisible process.
 
 **Keybinds**
 
+VimTeX's own mappings sit behind `vim.g.vimtex_mappings_prefix = "<leader>l"` (`lua/plugins/latex.lua`), and the leader is `<Space>`, so the prefix is Space-l rather than VimTeX's stock `\l`.
+
 | Keybind | Effect |
 | --- | --- |
-| `\ll` | Compile |
-| `\lv` | Forward search (jump to cursor position in Skim) |
-| `Cmd+Shift+Click` | Backward search (jump to source line in Neovim) |
+| `<leader>ll` | Compile |
+| `<leader>lv` | Forward search (jump to cursor position in Skim) |
