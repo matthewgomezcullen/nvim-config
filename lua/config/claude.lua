@@ -8,11 +8,11 @@
 --                protocol (see scripts/claude-code.sh), so it opens native diffs.
 --   <leader>clr  Resume the most recent project conversation in this cwd (claude --continue),
 --                reusing the same pane as <leader>clc.
---   <leader>clf  Copy an @-mention of the current file to the system clipboard, then focus
---                the project pane so you can paste it into your prompt.
---   <leader>cls  The same, with the cursor line or the visual selection as a #L range.
 --
 -- Focus a pane with vim-tmux-navigator; it closes when you exit Claude (Ctrl-D).
+--
+-- File references are not part of this: <leader>clf / <leader>cls (lua/config/keymaps.lua)
+-- copy `@path#L10-20` to the system clipboard for you to paste, and depend on nothing here.
 
 local scripts = vim.fn.expand("~/.config/nvim/scripts")
 
@@ -76,43 +76,6 @@ local function project_session(resume)
   open_pane("@claude_code_pane", { "-h", "-b", "-l", "80", "-c", vim.fn.getcwd() }, cmd)
 end
 
--- Copy an @-mention of the current buffer to the system clipboard, then focus the project
--- pane so you can paste it into your prompt.
---
--- This replaces pushing the mention over the IDE socket (ClaudeCodeAdd / ClaudeCodeSend).
--- That direction is a fire-and-forget JSON-RPC notification, so a stale connection swallows
--- the mention silently and you only notice after typing the rest of the prompt. The CLI
--- parses `@path#L10-20` out of typed input with the same regex it applies to a broadcast
--- mention, so a pasted reference resolves identically -- just without the socket in between.
-local function yank_mention(with_range)
-  local path = vim.fn.expand("%:p")
-  if path == "" then
-    vim.notify("No file in this buffer to mention.", vim.log.levels.WARN)
-    return
-  end
-
-  -- `:.` is relative to Neovim's cwd, which is also the Claude pane's cwd (see
-  -- project_session); a file outside it keeps its absolute path, which resolves too.
-  local mention = "@" .. vim.fn.fnamemodify(path, ":.")
-  if with_range then
-    -- In Visual mode these are the two ends of the selection; outside it both are the
-    -- cursor line, which gives a single-line `#L12`.
-    local first, last = vim.fn.line("v"), vim.fn.line(".")
-    if first > last then
-      first, last = last, first
-    end
-    mention = mention .. "#L" .. first .. (last > first and "-" .. last or "")
-  end
-
-  vim.fn.setreg("+", mention)
-  -- Leave Visual mode, so coming back from the Claude pane lands you in Normal mode.
-  if vim.fn.mode():find("^[vV\22]") then
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", false)
-  end
-  vim.notify("Copied " .. mention)
-  focus_pane("@claude_code_pane")
-end
-
 vim.api.nvim_create_user_command("Claude", nvim_helper, { desc = "Ask Claude about the NV setup" })
 -- Wrap project_session: user-command callbacks receive an opts *table*, which is truthy and
 -- would wrongly trigger `resume`. The keymap callbacks are wrapped too for symmetry.
@@ -122,10 +85,6 @@ vim.api.nvim_create_user_command("ClaudeProjectResume", function() project_sessi
 vim.keymap.set("n", "<leader>cln", nvim_helper, { desc = "Claude: ask about this Neovim setup" })
 vim.keymap.set("n", "<leader>clc", function() project_session() end, { desc = "Claude: project session (IDE-connected)" })
 vim.keymap.set("n", "<leader>clr", function() project_session(true) end, { desc = "Claude: resume previous project session" })
-vim.keymap.set("n", "<leader>clf", function() yank_mention(false) end, { desc = "Claude: copy @-mention of this file" })
--- A function rhs runs like <Cmd>, so Visual mode is still active and line("v") is the start
--- of the selection; in Normal mode it is the cursor line.
-vim.keymap.set({ "n", "x" }, "<leader>cls", function() yank_mention(true) end, { desc = "Claude: copy @-mention with line range" })
 
 -- Allow lowercase `:claude` -> `:Claude` (user commands must be capitalized; this only
 -- expands when `claude` is the entire command line).
@@ -175,8 +134,8 @@ end
 
 local group = vim.api.nvim_create_augroup("ClaudeIde", { clear = true })
 
--- The maps above focus the pane themselves; this covers the plugin's own :ClaudeCodeSend,
--- kept as a fallback for when the socket is behaving. `focus_after_send` is inert with
+-- Nothing is mapped to :ClaudeCodeSend / :ClaudeCodeAdd, but the commands remain, so keep
+-- focusing the pane when one of them fires. `focus_after_send` is inert with
 -- provider = "none" (Claude runs outside Neovim), so the plugin offers this event instead.
 -- It fires once per file and only while Claude is connected; `select-pane` is idempotent.
 vim.api.nvim_create_autocmd("User", {

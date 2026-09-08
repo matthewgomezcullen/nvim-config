@@ -12,9 +12,9 @@ return {
             log_level = "warn",
         },
         keys = {
-            -- <leader>clf / <leader>cls copy an @-mention to the clipboard instead of
-            -- broadcasting one (see lua/config/claude.lua), so :ClaudeCodeSend and
-            -- :ClaudeCodeAdd are deliberately left unmapped.
+            -- :ClaudeCodeSend / :ClaudeCodeAdd are deliberately unmapped: file references
+            -- go to the clipboard instead (<leader>clf / <leader>cls in
+            -- lua/config/keymaps.lua), which does not need the socket to be alive.
             { "<leader>cla", "<cmd>ClaudeCodeDiffAccept<cr>", desc = "Claude: accept diff" },
             { "<leader>cld", "<cmd>ClaudeCodeDiffDeny<cr>", desc = "Claude: reject diff" },
         },

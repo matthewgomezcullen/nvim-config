@@ -72,6 +72,8 @@ See the configurations I use below.
 | `vim.keymap.set("n", "<leader>ff", ...)` | Find files with Telescope, including hidden and ignored files. |
 | `vim.keymap.set("n", "<leader>fg", ...)` | Search text with Telescope live grep. |
 | `vim.keymap.set("v", "<leader>y", '"+y', ...)` | Yank the visual selection to the system clipboard (`"+y`). |
+| `<leader>clf` | Copy a reference to the current file (`@path`) to the system clipboard, to paste wherever you need it. |
+| `<leader>cls` | The same with line numbers: `@path#L10-20` for a visual selection, `@path#L12` for the cursor line. Claude Code resolves this syntax when pasted into a prompt, but the map is a plain yank — it needs no session, pane or plugin. |
 | `vim.keymap.set("n", "j" / "k", ...)` | Move by screen lines with `gj` / `gk` when no count is given; counted motions keep normal line movement. |
 | `vim.keymap.set("n", "<Down>" / "<Up>", ...)` | Match the same screen-line behavior for the arrow keys. |
 | `<leader>ma` | Add cursors for every match of the word under the cursor or the visual selection. |
@@ -79,8 +81,6 @@ See the configurations I use below.
 | `<leader>ms` / `<leader>mS` | Skip the next / previous matching cursor. |
 | `<leader>cln` | Open a picker over past questions about this Neovim setup, in a small tmux pane below Neovim. Resume one, or ask a new one in its own session. Also available as `:Claude`. See [Agents](#agents). |
 | `<leader>clc` | Open the project Claude Code session in a tmux pane to the left, connected to this Neovim. Also available as `:ClaudeProject`. See [Agents](#agents). |
-| `<leader>clf` | Copy an `@file` mention of the current buffer to the system clipboard, then focus the Claude pane, so you can paste the reference straight into your prompt. |
-| `<leader>cls` | The same with line numbers: `@file#L10-20` for a visual selection, `@file#L12` for the cursor line. |
 | `<leader>cla` / `<leader>cld` | Accept / reject the diff Claude is proposing. Equivalent to `:w` / `:q` in the diff buffer. An accepted diff reloads the buffer automatically. |
 
 **autocmds**
@@ -253,7 +253,7 @@ Inside the diff view, `<tab>` / `<s-tab>` navigate between files, and `s` stages
 | --- | --- | --- |
 | [claudecode.nvim](https://github.com/coder/claudecode.nvim) | Connects the Claude Code CLI to Neovim over the same IDE protocol the official VS Code extension speaks, so selections become `@file#L10-20` mentions and Claude's edits open as native diffs. | `terminal = { provider = "none" }`, so it manages no terminal and Claude keeps running in its own tmux pane. Loaded eagerly (`lazy = false`) because its WebSocket server starts inside `setup()`. |
 
-The plugin only supplies the integration server; the panes, the launchers, and the `<leader>cl` keymaps live in `lua/config/claude.lua`. See [Agents](#agents).
+The plugin only supplies the integration server; the panes, the launchers, and the `cln` / `clc` / `clr` keymaps live in `lua/config/claude.lua`. See [Agents](#agents).
 
 ## Nerd Fonts
 
@@ -346,11 +346,11 @@ Implementation: `scripts/claude-nvim-helper.sh` (the picker, the registry, the m
 | Loaded eagerly | The plugin spec sets `lazy = false`, because the server starts inside `setup()`. Lazy-loading it on a keymap would race: `claude --ide` would find no lock file. |
 | Local only | The server binds `127.0.0.1`. The lock file (mode `0600`, in a `0700` directory) carries a 128-bit CSPRNG token, checked with a constant-time compare during the WebSocket handshake. The plugin reports no telemetry. |
 | The setup helper stays out of it | `<leader>cln` passes neither `--ide` nor a port, and `autoConnectIde` is off, so the read-only setup helper never attaches and never captures a diff meant for the project you are editing. |
-| References go via the clipboard | `<leader>clf` / `<leader>cls` put the `@file#L10-20` mention on the system clipboard and focus the pane, rather than broadcasting it over the socket. The send direction is a JSON-RPC *notification* — no id, no reply — so a connection that has gone stale swallows the mention silently, and you find out only after typing the rest of the prompt. The CLI parses a typed mention with the same regex it applies to a broadcast one, so a pasted reference resolves identically. `:ClaudeCodeSend` stays available for when the socket is behaving. |
-| Focus follows a send | The plugin's `focus_after_send` is inert with `provider = "none"`, since Claude runs outside Neovim. The maps above focus the pane themselves, and a `User ClaudeCodeSendComplete` autocmd covers `:ClaudeCodeSend`, focusing the pane recorded by `<leader>clc` and falling back to tmux `{last}` if you launched Claude by hand. |
+| Nothing is sent over the wire | The socket carries diffs only. The send direction — `:ClaudeCodeSend` broadcasting an `@file#L10-20` mention — is a JSON-RPC *notification*: no id, no reply, so a connection that has gone stale swallows the mention silently and you find out only after typing the rest of the prompt. The CLI parses a typed mention with the same regex it applies to a broadcast one, so `<leader>clf` / `<leader>cls` put the reference on the clipboard instead and you paste it. Same result, no dependency on the integration being up — they work with no Claude pane open at all. The commands stay available if you want them. |
+| Focus follows a send | Nothing is mapped to `:ClaudeCodeSend`, but the command remains, and the plugin's `focus_after_send` is inert with `provider = "none"` since Claude runs outside Neovim. A `User ClaudeCodeSendComplete` autocmd focuses the pane recorded by `<leader>clc` instead, falling back to tmux `{last}` if you launched Claude by hand. |
 | Accepted diffs reload the buffer | Neovim hands the accepted contents back to the CLI, which writes the file *after* it asks Neovim to close the diff; the plugin's own reload waits a fixed 100 ms for that write and loses the race on anything slow. So on `User ClaudeCodeDiffClosed` we poll until the file on disk diverges from the buffer, then re-read it with the cursor preserved. Modified buffers are skipped, so unsaved work is never clobbered, and a rejected diff never diverges, so it costs nothing. `<leader>r` remains the manual override. |
 
-Implementation: `lua/plugins/claude.lua` (the plugin spec and the `cla` / `cld` maps), `scripts/claude-code.sh` (the `--ide` launcher), and `lua/config/claude.lua` (tmux pane management for both panes, plus the `clf` / `cls` mention maps).
+Implementation: `lua/plugins/claude.lua` (the plugin spec and the `cla` / `cld` maps), `scripts/claude-code.sh` (the `--ide` launcher), and `lua/config/claude.lua` (tmux pane management for both panes). The `clf` / `cls` reference maps are plain keymaps in `lua/config/keymaps.lua`, independent of all of this.
 
 Two caveats. The wire protocol is not published by Anthropic and `claudecode.nvim` is beta, so a CLI update can break the integration; the TUI and `<leader>cln` keep working regardless. And with `provider = "none"` the plugin's own terminal commands (`:ClaudeCode`, `:ClaudeCodeOpen`, `:ClaudeCodeSendText`) are inert, so they are deliberately left unmapped. If you ever enable `format_on_save` in `conform.nvim`, exclude diff buffers (`buftype == "acwrite"`, or names containing `(proposed)`) or saving will silently accept Claude's diff.
 
