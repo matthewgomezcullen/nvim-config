@@ -79,6 +79,7 @@ See the configurations I use below.
 | `<leader>ma` | Add cursors for every match of the word under the cursor or the visual selection. |
 | `<leader>mn` / `<leader>mN` | Add the next / previous matching cursor. |
 | `<leader>ms` / `<leader>mS` | Skip the next / previous matching cursor. |
+| `<leader>j` / `<leader>k` | Add a cursor on the line below / above at the same column (VS Code's `Cmd`+`Opt`+`Down` / `Up`). |
 | `<leader>cln` | Open a picker over past questions about this Neovim setup, in a small tmux pane below Neovim. Resume one, or ask a new one in its own session. Also available as `:Claude`. See [Agents](#agents). |
 | `<leader>clc` | Open the project Claude Code session in a tmux pane to the left, connected to this Neovim. Also available as `:ClaudeProject`. See [Agents](#agents). |
 | `<leader>cla` / `<leader>cld` | Accept / reject the diff Claude is proposing. Equivalent to `:w` / `:q` in the diff buffer. An accepted diff reloads the buffer automatically. |

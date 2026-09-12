@@ -4,6 +4,22 @@ return {
         branch = "1.0",
         keys = {
             {
+                "<leader>j",
+                function()
+                    require("multicursor-nvim").lineAddCursor(1)
+                end,
+                mode = { "n", "x" },
+                desc = "Multi-cursor: Add cursor on line below",
+            },
+            {
+                "<leader>k",
+                function()
+                    require("multicursor-nvim").lineAddCursor(-1)
+                end,
+                mode = { "n", "x" },
+                desc = "Multi-cursor: Add cursor on line above",
+            },
+            {
                 "<leader>ma",
                 function()
                     require("multicursor-nvim").matchAllAddCursors()
