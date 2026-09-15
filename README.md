@@ -227,6 +227,20 @@ The runner exits non-zero if any test fails, so it slots into CI or a pre-commit
 
 The `python` treesitter parser is enabled for syntax highlighting. Format-on-save is not configured — run `:lua require("conform").format()` to format the current buffer.
 
+### `csv`
+
+| Package | Purpose | Configurations |
+| --- | --- | --- |
+| [csvview.nvim](https://github.com/hat0uma/csvview.nvim) | Shows `.csv` / `.tsv` files as an aligned table, drawn with virtual text so the file itself is untouched. The VS Code equivalent is Rainbow CSV's column alignment. | Lazy-loads on the `csv` / `tsv` filetypes, and a `FileType` autocmd in its `config` turns the view on as soon as a file opens. `display_mode = "border"` draws `│` between columns, and the header row stays pinned while you scroll (the plugin's default). The keymaps below are buffer-local and exist only while the view is on. |
+
+| Key / command | Effect |
+| --- | --- |
+| `:CsvViewToggle` | Switch between the table and the raw text. Takes options for the buffer, e.g. `:CsvViewToggle display_mode=highlight`. |
+| `:CsvViewInfo` | Show the detected delimiter, quote character and header row. |
+| `<Tab>` / `<S-Tab>` | Jump to the end of the next / previous field. A terminal sends the same code for `<Tab>` and `<C-i>`, so in a CSV buffer `<C-i>` no longer jumps forward through the jumplist. |
+| `<Enter>` / `<S-Enter>` | Jump to the next / previous row. `<S-Tab>` and `<S-Enter>` only work if the terminal sends distinct codes for them (CSI-u). |
+| `if` / `af` | Field text objects: `dif`, `caf`, `vif`. |
+
 ### `git`
 
 | Package | Purpose |
