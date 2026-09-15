@@ -68,6 +68,7 @@ See the configurations I use below.
 | --- | --- |
 | `vim.keymap.set("n", "<leader>r", ":e!<CR>", { desc = "Reload file from disk" })` | Use for **agentic workflows**. This command refreshes the open editor to view external changes (e.g., from an agent). |
 | `vim.keymap.set("n", "<leader>e", ...)` | Toggle `nvim-tree`. |
+| `vim.keymap.set("n", "<leader>.", ...)` / `<leader>,` | Widen / narrow the `nvim-tree` window by 5 columns. `api.tree.resize` targets the tree, so they work from the editor too. |
 | `<leader>]` (in `nvim-tree`) | Set the directory under the cursor as the new tree root (CD). `-` goes back up. |
 | `vim.keymap.set("n", "<leader>ff", ...)` | Find files with Telescope, including hidden and ignored files. |
 | `vim.keymap.set("n", "<leader>fg", ...)` | Search text with Telescope live grep. |

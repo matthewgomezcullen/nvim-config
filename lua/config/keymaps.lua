@@ -1,5 +1,9 @@
 vim.keymap.set("n", "<leader>r", ":e!<CR>", { desc = "Reload file from disk" })
 vim.keymap.set("n", "<leader>e", function() require("nvim-tree.api").tree.toggle() end, { noremap = true, silent = true, desc = "nvim-tree: Toggle" })
+-- Resize the tree from anywhere: api.tree.resize acts on the tree window, so these work
+-- with the cursor still in the editor (VS Code: dragging the sidebar edge).
+vim.keymap.set("n", "<leader>.", function() require("nvim-tree.api").tree.resize({ relative = 5 }) end, { noremap = true, silent = true, desc = "nvim-tree: Widen" })
+vim.keymap.set("n", "<leader>,", function() require("nvim-tree.api").tree.resize({ relative = -5 }) end, { noremap = true, silent = true, desc = "nvim-tree: Narrow" })
 vim.keymap.set("n", "<leader>ff", "<cmd>Telescope find_files hidden=true no_ignore=true<cr>", { desc = "Find files" })
 vim.keymap.set("n", "<leader>fg", "<cmd>Telescope live_grep<cr>", { desc = "Live grep" })
 vim.keymap.set("n", "j", "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true, desc = "Move down by screen line" })
