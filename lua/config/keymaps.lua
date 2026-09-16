@@ -6,6 +6,10 @@ vim.keymap.set("n", "<leader>.", function() require("nvim-tree.api").tree.resize
 vim.keymap.set("n", "<leader>,", function() require("nvim-tree.api").tree.resize({ relative = -5 }) end, { noremap = true, silent = true, desc = "nvim-tree: Narrow" })
 vim.keymap.set("n", "<leader>ff", "<cmd>Telescope find_files hidden=true no_ignore=true<cr>", { desc = "Find files" })
 vim.keymap.set("n", "<leader>fg", "<cmd>Telescope live_grep<cr>", { desc = "Live grep" })
+vim.keymap.set("n", "<leader>fr", "<cmd>Telescope resume<cr>", { desc = "Resume last picker" })
+-- Step through the quickfix list, e.g. a live grep sent there with <C-q>.
+vim.keymap.set("n", "<leader>sn", "<cmd>cnext<cr>", { desc = "Quickfix: next item" })
+vim.keymap.set("n", "<leader>sp", "<cmd>cprev<cr>", { desc = "Quickfix: previous item" })
 vim.keymap.set("n", "j", "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true, desc = "Move down by screen line" })
 vim.keymap.set("n", "k", "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true, desc = "Move up by screen line" })
 vim.keymap.set("n", "<Down>", "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true, desc = "Move down by screen line" })

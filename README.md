@@ -72,6 +72,8 @@ See the configurations I use below.
 | `<leader>]` (in `nvim-tree`) | Set the directory under the cursor as the new tree root (CD). `-` goes back up. |
 | `vim.keymap.set("n", "<leader>ff", ...)` | Find files with Telescope, including hidden and ignored files. |
 | `vim.keymap.set("n", "<leader>fg", ...)` | Search text with Telescope live grep. |
+| `vim.keymap.set("n", "<leader>fr", ...)` | Reopen the last Telescope picker (`:Telescope resume`) with its query, results and selection intact. |
+| `<leader>sn` / `<leader>sp` | Jump to the next / previous quickfix item (`:cnext` / `:cprev`). Send a live grep's matches there with `<C-q>` to step through them without reopening the picker. which-key shows `<leader>s` as the "Quickfix" group. |
 | `vim.keymap.set("v", "<leader>y", '"+y', ...)` | Yank the visual selection to the system clipboard (`"+y`). |
 | `<leader>clf` | Copy a reference to the current file (`@path`) to the system clipboard, to paste wherever you need it. |
 | `<leader>cls` | The same with line numbers: `@path#L10-20` for a visual selection, `@path#L12` for the cursor line. Claude Code resolves this syntax when pasted into a prompt, but the map is a plain yank — it needs no session, pane or plugin. |
