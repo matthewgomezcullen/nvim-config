@@ -390,6 +390,8 @@ Two caveats. The wire protocol is not published by Anthropic and `claudecode.nvi
 
 Two variables are passed to pandoc to fix its defaults. `geometry:margin=0.75in` replaces LaTeX's article-class margins, which are wide enough (~2in per side) that wide tables get squeezed until their cells overlap — this config's own README drops from 15 pages to 10. `monofont:JetBrainsMono Nerd Font Mono` replaces Latin Modern Mono, which has no box-drawing or Nerd Font glyphs and silently omits them from code blocks; swap in `Menlo` (a macOS system font) if the Nerd Font is ever uninstalled, since xelatex fails outright on a missing font.
 
+If [**mermaid-filter**](https://github.com/raghur/mermaid-filter) is on `PATH` (`npm install -g mermaid-filter`), `:MdPdf` also passes `-F mermaid-filter`, so ` ```mermaid ` blocks render as diagrams in the PDF. The filter is optional: without it those blocks fall back to plain code blocks instead of failing the render.
+
 Live compilation hangs off `BufWritePost` rather than a filesystem watcher: pandoc reads from disk, so an unsaved buffer has nothing new to render, and reusing the save debounces for free. A save landing while pandoc is still running is coalesced into a single re-run afterwards, so two renders never race to write the same PDF. The viewer has to reload on its own — Preview and Skim both pick up the new file automatically, though Preview will not if the PDF has unsaved annotations.
 
 `mo` is a background server with no signal for the browser being closed, so cleanup is tied to the Neovim buffer lifecycle instead. Closing only the browser tab leaves the file in mo until you delete the buffer or quit Neovim. `BufDelete` (not `BufUnload`) is used so reloading the file with `:e` doesn't drop it from the session.

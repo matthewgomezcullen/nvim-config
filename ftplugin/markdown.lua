@@ -99,7 +99,7 @@ local function md_pdf_render(opts)
 
     -- Async so a slow LaTeX run doesn't block the editor; --resource-path lets
     -- relative image links resolve against the Markdown file's directory.
-    vim.system({
+    local cmd = {
         'pandoc', file,
         '-o', pdf,
         '--pdf-engine=xelatex',
@@ -110,7 +110,14 @@ local function md_pdf_render(opts)
         -- Latin Modern Mono has no box-drawing or Nerd Font glyphs, so code
         -- blocks silently drop characters. Swap for "Menlo" if this font goes.
         '-V', 'monofont:JetBrainsMono Nerd Font Mono',
-    }, { text = true }, function(result)
+    }
+    -- Render ```mermaid blocks as diagrams. Optional: without the filter they
+    -- fall back to plain code blocks rather than failing the whole render.
+    if vim.fn.executable('mermaid-filter') == 1 then
+        vim.list_extend(cmd, { '-F', 'mermaid-filter' })
+    end
+
+    vim.system(cmd, { text = true }, function(result)
         vim.schedule(function()
             pdf_rendering = false
             -- Failures always speak up, even in watch mode: a silent stale PDF
