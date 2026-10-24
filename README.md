@@ -392,6 +392,12 @@ Two variables are passed to pandoc to fix its defaults. `geometry:margin=0.75in`
 
 If [**mermaid-filter**](https://github.com/raghur/mermaid-filter) is on `PATH` (`npm install -g mermaid-filter`), `:MdPdf` also passes `-F mermaid-filter`, so ` ```mermaid ` blocks render as diagrams in the PDF. The filter is optional: without it those blocks fall back to plain code blocks instead of failing the render.
 
+mermaid-filter's bundled Puppeteer (v19) expects its own Chromium, but `npm install -g` skips the download script, and running that script manually crashes on current Node (it fails loading `yargs`). Point Puppeteer at the installed Google Chrome instead by adding this to `~/.zshrc`, then restart Neovim from a new shell:
+
+```sh
+export PUPPETEER_EXECUTABLE_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+```
+
 Live compilation hangs off `BufWritePost` rather than a filesystem watcher: pandoc reads from disk, so an unsaved buffer has nothing new to render, and reusing the save debounces for free. A save landing while pandoc is still running is coalesced into a single re-run afterwards, so two renders never race to write the same PDF. The viewer has to reload on its own — Preview and Skim both pick up the new file automatically, though Preview will not if the PDF has unsaved annotations.
 
 `mo` is a background server with no signal for the browser being closed, so cleanup is tied to the Neovim buffer lifecycle instead. Closing only the browser tab leaves the file in mo until you delete the buffer or quit Neovim. `BufDelete` (not `BufUnload`) is used so reloading the file with `:e` doesn't drop it from the session.
