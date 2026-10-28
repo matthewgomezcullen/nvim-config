@@ -117,7 +117,10 @@ local function md_pdf_render(opts)
         vim.list_extend(cmd, { '-F', 'mermaid-filter' })
     end
 
-    vim.system(cmd, { text = true }, function(result)
+    -- mermaid-filter always writes a mermaid-filter.err log to its working
+    -- directory, so run from the cache dir rather than littering the project.
+    -- Every path above is absolute, so the render itself is unaffected.
+    vim.system(cmd, { text = true, cwd = vim.fn.stdpath('cache') }, function(result)
         vim.schedule(function()
             pdf_rendering = false
             -- Failures always speak up, even in watch mode: a silent stale PDF
