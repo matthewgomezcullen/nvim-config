@@ -97,6 +97,17 @@ local function md_pdf_render(opts)
         vim.notify('Rendering ' .. vim.fn.fnamemodify(pdf, ':t') .. '…')
     end
 
+    -- LaTeX's verbatim blocks never wrap, so long code lines run off the page.
+    -- fvextra's Verbatim does: rebuild pandoc's highlighted (Highlighting) and
+    -- plain (verbatim) code environments on it. breakanywhere lets unbroken
+    -- tokens like URLs wrap too; spaces are still the preferred break points.
+    local header = vim.fn.stdpath('cache') .. '/md-pdf-header.tex'
+    vim.fn.writefile({
+        [[\usepackage{fvextra}]],
+        [[\DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,breakanywhere,commandchars=\\\{\}}]],
+        [[\renewenvironment{verbatim}{\VerbatimEnvironment\begin{Verbatim}[breaklines,breakanywhere]}{\end{Verbatim}}]],
+    }, header)
+
     -- Async so a slow LaTeX run doesn't block the editor; --resource-path lets
     -- relative image links resolve against the Markdown file's directory.
     local cmd = {
@@ -110,6 +121,8 @@ local function md_pdf_render(opts)
         -- Latin Modern Mono has no box-drawing or Nerd Font glyphs, so code
         -- blocks silently drop characters. Swap for "Menlo" if this font goes.
         '-V', 'monofont:JetBrainsMono Nerd Font Mono',
+        -- -H adds to a document's own YAML header-includes rather than replacing them.
+        '-H', header,
     }
     -- Render ```mermaid blocks as diagrams. Optional: without the filter they
     -- fall back to plain code blocks rather than failing the whole render.
