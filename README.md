@@ -433,3 +433,6 @@ VimTeX's own mappings sit behind `vim.g.vimtex_mappings_prefix = "<leader>l"` (`
 | --- | --- |
 | `<leader>ll` | Compile |
 | `<leader>lv` | Forward search (jump to cursor position in Skim) |
+| `<leader>lR` | Toggle review mode for the buffer (defined in `ftplugin/tex.lua`, not VimTeX). While it is on, typing `{` right after a review-markup macro (`\ad`, `\dl`, `\rp`, `\cm`, `\hlt`) inserts the author option first, so `\rp{` becomes `\rp[id=MGC]{`. |
+
+Review mode triggers on the `{`, not on the macro name, so longer commands that share a prefix (`\addplot`, `\cmidrule`) are untouched. So are `\\ad` (a line break followed by text) and a macro whose options you typed yourself (`\ad[id=x]{`). It uses an `InsertCharPre` autocmd that rewrites the typed `{`, so it also works when nvim-autopairs inserts the `{}` pair. The initials and macro list are `REVIEW_ID` and `REVIEW_MACROS` at the top of `ftplugin/tex.lua`. `R` is uppercase because VimTeX already uses `<leader>ls` (toggle main file) and `<leader>lS`.
