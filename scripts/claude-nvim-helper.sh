@@ -7,12 +7,17 @@
 #
 #   enter, on a row           resume that session
 #   enter, nothing matched    start a new session; the query is the first question
-#   alt-enter                 start a new session from the query, even if rows matched
+#   ctrl-o / alt-enter        start a new session from the query, even if rows matched
 #   ctrl-x                    forget the row (registry only; the transcript survives)
 #   esc                       close the pane
 #
 # Each question gets its own session id, so none of them pays input tokens to re-send
 # another's history. Exiting Claude (Ctrl-D) comes back here rather than closing the pane.
+#
+# ctrl-o is the reliable "new" key. alt-enter only reaches fzf when the terminal sends
+# Option as Meta (ESC CR); with iTerm2's default "Normal" Option key it arrives as a plain
+# enter and resumes the highlighted row instead. ctrl-o has no fzf default binding and no
+# tmux root-table binding, so it works everywhere.
 #
 # ctrl-x, not ctrl-d, forgets a row: Ctrl-D already means "exit Claude", and a destructive
 # second meaning one keystroke away invites muscle-memory mistakes.
@@ -147,10 +152,10 @@ while true; do
   rc=0
   out=$(printf '%s' "$rows" | fzf \
     --delimiter=$'\t' --with-nth=2.. \
-    --print-query --expect=alt-enter,ctrl-x \
+    --print-query --expect=alt-enter,ctrl-o,ctrl-x \
     --layout=reverse --height=100% --info=inline \
     --prompt='ask> ' \
-    --header='enter open · alt-enter new · ctrl-x forget · esc quit') || rc=$?
+    --header='enter open · ctrl-o new · ctrl-x forget · esc quit') || rc=$?
 
   if [ "$rc" -eq 130 ]; then
     exit 0
@@ -177,7 +182,7 @@ while true; do
       fi
       continue
       ;;
-    alt-enter)
+    alt-enter | ctrl-o)
       # Ignore whatever the query happened to match; the query *is* the new question.
       id=""
       ;;

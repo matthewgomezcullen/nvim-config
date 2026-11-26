@@ -335,9 +335,11 @@ The pane opens on an [fzf](https://github.com/junegunn/fzf) picker listing the q
 | --- | --- |
 | `enter`, on a row | Resume that session. |
 | `enter`, when the query matched nothing | Start a new session, taking the query as the first question. |
-| `alt-enter` | Start a new session from the query even if rows matched. |
+| `ctrl-o` (or `alt-enter`) | Start a new session from the query even if rows matched. |
 | `ctrl-x` | Forget the highlighted row. The registry entry goes; the transcript on disk stays. |
 | `esc` | Close the pane. |
+
+`ctrl-o` is the dependable "new" key. `alt-enter` only works when the terminal sends Option as Meta: with iTerm2's default Option key ("Normal"), Option+Enter arrives as a plain `enter` and resumes the highlighted row. To make `alt-enter` work too, set iTerm2 → Settings → Profiles → Keys → Left/Right Option key to `Esc+`, or add a key mapping for ⌥↩ that sends hex `0x1b 0x0d`.
 
 `ctrl-x` rather than `ctrl-d` for forget, because `Ctrl-D` already means "exit Claude" and a destructive second meaning one keystroke away invites muscle-memory mistakes.
 
