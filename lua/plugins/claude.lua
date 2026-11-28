@@ -13,10 +13,10 @@ return {
         },
         keys = {
             -- :ClaudeCodeSend / :ClaudeCodeAdd are deliberately unmapped: file references
-            -- go to the clipboard instead (<leader>clf / <leader>cls in
+            -- go to the clipboard instead (<leader>cf / <leader>cs in
             -- lua/config/keymaps.lua), which does not need the socket to be alive.
-            { "<leader>cla", "<cmd>ClaudeCodeDiffAccept<cr>", desc = "Claude: accept diff" },
-            { "<leader>cld", "<cmd>ClaudeCodeDiffDeny<cr>", desc = "Claude: reject diff" },
+            { "<leader>ca", "<cmd>ClaudeCodeDiffAccept<cr>", desc = "Claude: accept diff" },
+            { "<leader>cd", "<cmd>ClaudeCodeDiffDeny<cr>", desc = "Claude: reject diff" },
         },
     },
 }

@@ -51,6 +51,7 @@ return {
         opts = {
             spec = {
                 { "<leader>s", group = "Quickfix" },
+                { "<leader>c", group = "Claude / Codex" },
             },
         },
         keys = {

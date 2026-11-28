@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Small, independent Claude sessions for questions about the Neovim setup.
 #
-# Opened by <leader>cln (lua/config/claude.lua) in a short tmux pane, always cwd'd in
+# Opened by <leader>cn (lua/config/claude.lua) in a short tmux pane, always cwd'd in
 # ~/.config/nvim so Claude reads the config and its CLAUDE.md files. An fzf picker lists
 # the questions asked before, one row per session:
 #

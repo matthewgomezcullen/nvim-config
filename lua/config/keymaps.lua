@@ -47,7 +47,7 @@ local function yank_file_reference(with_range)
   vim.notify("Copied " .. ref)
 end
 
-vim.keymap.set("n", "<leader>clf", function() yank_file_reference(false) end, { desc = "Copy file reference to clipboard" })
+vim.keymap.set("n", "<leader>cf", function() yank_file_reference(false) end, { desc = "Copy file reference to clipboard" })
 -- A function rhs runs like <Cmd>, so Visual mode is still active and line("v") is the start
 -- of the selection; in Normal mode it is the cursor line.
-vim.keymap.set({ "n", "x" }, "<leader>cls", function() yank_file_reference(true) end, { desc = "Copy file reference with line range to clipboard" })
+vim.keymap.set({ "n", "x" }, "<leader>cs", function() yank_file_reference(true) end, { desc = "Copy file reference with line range to clipboard" })

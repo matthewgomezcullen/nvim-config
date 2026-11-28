@@ -1,17 +1,18 @@
--- Claude helpers, each in its own tmux pane beside Neovim.
+-- Claude and Codex helpers, each in its own tmux pane beside Neovim. <leader>c is the
+-- shared prefix: the second key picks the agent (l = Claude, o = Codex) or the action.
 --
---   <leader>cln  Quick questions about this Neovim setup. A pinned, Opus-backed session
---                always cwd'd in ~/.config/nvim (see scripts/claude-nvim-helper.sh).
---                Deliberately NOT connected to the IDE server: it is a read-only Q&A pane,
---                and letting it capture diffs for the project you are editing would confuse.
---   <leader>clc  The project session, connected to this Neovim over the Claude Code IDE
---                protocol (see scripts/claude-code.sh), so it opens native diffs.
---   <leader>clr  Resume the most recent project conversation in this cwd (claude --continue),
---                reusing the same pane as <leader>clc.
+--   <leader>cl  The project Claude session, connected to this Neovim over the Claude Code
+--               IDE protocol (see scripts/claude-code.sh), so it opens native diffs.
+--   <leader>co  The project Codex session, in a pane of its own. Codex speaks no IDE
+--               protocol here, so it writes files directly instead of proposing diffs.
+--   <leader>cn  Quick questions about this Neovim setup. A pinned, Opus-backed session
+--               always cwd'd in ~/.config/nvim (see scripts/claude-nvim-helper.sh).
+--               Deliberately NOT connected to the IDE server: it is a read-only Q&A pane,
+--               and letting it capture diffs for the project you are editing would confuse.
 --
--- Focus a pane with vim-tmux-navigator; it closes when you exit Claude (Ctrl-D).
+-- Focus a pane with vim-tmux-navigator; it closes when you exit the agent (Ctrl-D).
 --
--- File references are not part of this: <leader>clf / <leader>cls (lua/config/keymaps.lua)
+-- File references are not part of this: <leader>cf / <leader>cs (lua/config/keymaps.lua)
 -- copy `@path#L10-20` to the system clipboard for you to paste, and depend on nothing here.
 
 local scripts = vim.fn.expand("~/.config/nvim/scripts")
@@ -42,7 +43,7 @@ end
 -- would not survive Claude's TUI overwriting it.)
 local function open_pane(var, split, cmd)
   if vim.env.TMUX == nil then
-    vim.notify("Claude helpers need Neovim running inside tmux.", vim.log.levels.WARN)
+    vim.notify("Claude / Codex helpers need Neovim running inside tmux.", vim.log.levels.WARN)
     return
   end
 
@@ -73,7 +74,13 @@ local function project_session(resume)
   if resume then
     table.insert(cmd, "--continue") -- reopen the most recent conversation in this cwd
   end
-  open_pane("@claude_code_pane", { "-h", "-b", "-l", "80", "-c", vim.fn.getcwd() }, cmd)
+  open_pane("@claude_code_pane", { "-h", "-b", "-l", "50%", "-c", vim.fn.getcwd() }, cmd)
+end
+
+local function codex_session()
+  -- `-c analytics.enabled=false` keeps Codex's usage analytics off for sessions launched
+  -- from here, without touching ~/.codex/config.toml.
+  open_pane("@codex_pane", { "-h", "-b", "-l", "50%", "-c", vim.fn.getcwd() }, { "codex", "-c", "analytics.enabled=false" })
 end
 
 vim.api.nvim_create_user_command("Claude", nvim_helper, { desc = "Ask Claude about the NV setup" })
@@ -82,9 +89,11 @@ vim.api.nvim_create_user_command("Claude", nvim_helper, { desc = "Ask Claude abo
 vim.api.nvim_create_user_command("ClaudeProject", function() project_session() end, { desc = "Open the project Claude Code session" })
 vim.api.nvim_create_user_command("ClaudeProjectResume", function() project_session(true) end, { desc = "Resume the previous project Claude Code session" })
 
-vim.keymap.set("n", "<leader>cln", nvim_helper, { desc = "Claude: ask about this Neovim setup" })
-vim.keymap.set("n", "<leader>clc", function() project_session() end, { desc = "Claude: project session (IDE-connected)" })
-vim.keymap.set("n", "<leader>clr", function() project_session(true) end, { desc = "Claude: resume previous project session" })
+vim.api.nvim_create_user_command("Codex", codex_session, { desc = "Open the project Codex session" })
+
+vim.keymap.set("n", "<leader>cl", function() project_session() end, { desc = "Claude: project session (IDE-connected)" })
+vim.keymap.set("n", "<leader>co", codex_session, { desc = "Codex: project session" })
+vim.keymap.set("n", "<leader>cn", nvim_helper, { desc = "Claude: ask about this Neovim setup" })
 
 -- Allow lowercase `:claude` -> `:Claude` (user commands must be capitalized; this only
 -- expands when `claude` is the entire command line).

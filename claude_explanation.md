@@ -33,7 +33,7 @@ The server exposes a set of MCP tools, one file each under `lua/claudecode/tools
 
 `scripts/claude-code.sh` is nine lines of real code. It takes an optional port, exports it as `CLAUDE_CODE_SSE_PORT`, and runs `exec claude --ide`.
 
-The CLI scans `~/.claude/ide/*.lock` **at runtime**, not at install time. The `--ide` flag means "auto-connect if exactly one valid IDE is available." That qualifier is the reason we pin the port. With two Neovim instances open, two lock files exist, the CLI finds an ambiguity, and it declines to connect at all rather than guessing. Setting `CLAUDE_CODE_SSE_PORT` narrows discovery to a single candidate, so `<leader>clc` always attaches to the Neovim that launched it, rather than to whichever instance happened to be alone.
+The CLI scans `~/.claude/ide/*.lock` **at runtime**, not at install time. The `--ide` flag means "auto-connect if exactly one valid IDE is available." That qualifier is the reason we pin the port. With two Neovim instances open, two lock files exist, the CLI finds an ambiguity, and it declines to connect at all rather than guessing. Setting `CLAUDE_CODE_SSE_PORT` narrows discovery to a single candidate, so `<leader>cl` always attaches to the Neovim that launched it, rather than to whichever instance happened to be alone.
 
 The port comes out of the plugin's own state, in `lua/config/claude.lua`:
 
@@ -56,13 +56,13 @@ These are asymmetric, and the asymmetry is the most interesting thing in the sys
 
 The CLI parses that mention syntax natively, with the regex `^([^#]+)(?:#L(\d+)(?:-(\d+))?)?`. This is why the send direction was essentially free to build: nothing had to be invented on either end.
 
-That regex is also why this direction is now unmapped. `<leader>clf` and `<leader>cls` build the same `@path#L10-20` string and put it on the system clipboard, for you to paste. A notification with no id has no failure signal — a stale socket drops the mention and tells nobody — whereas a mention you can see in the prompt before you press enter either arrived or did not. The CLI cannot tell the two routes apart, and the clipboard route does not need the socket, the plugin, or an open pane. Those maps live in `lua/config/keymaps.lua`, deliberately outside this integration.
+That regex is also why this direction is now unmapped. `<leader>cf` and `<leader>cs` build the same `@path#L10-20` string and put it on the system clipboard, for you to paste. A notification with no id has no failure signal — a stale socket drops the mention and tells nobody — whereas a mention you can see in the prompt before you press enter either arrived or did not. The CLI cannot tell the two routes apart, and the clipboard route does not need the socket, the plugin, or an open pane. Those maps live in `lua/config/keymaps.lua`, deliberately outside this integration.
 
 ### Claude to Neovim: a blocking request
 
 When Claude wants to edit a file, it calls the `openDiff` tool and *waits*.
 
-On the Neovim side, `open_diff.lua` asserts that it is running inside a coroutine (`requires_coroutine = true`), sets up the diff UI, and then reaches `local user_action_result = coroutine.yield()` at `diff.lua:1669`. The coroutine parks there. **The human is the scheduler.** When you press `<leader>cla` or `<leader>cld`, the plugin resumes that coroutine with one of three payloads, and only then does the tool call return over the wire:
+On the Neovim side, `open_diff.lua` asserts that it is running inside a coroutine (`requires_coroutine = true`), sets up the diff UI, and then reaches `local user_action_result = coroutine.yield()` at `diff.lua:1669`. The coroutine parks there. **The human is the scheduler.** When you press `<leader>ca` or `<leader>cd`, the plugin resumes that coroutine with one of three payloads, and only then does the tool call return over the wire:
 
 | Payload | Meaning |
 | --- | --- |
@@ -78,7 +78,7 @@ This is the part to lead with in an interview. It is a blocking RPC across a Web
 
 ### Pane management
 
-`open_pane()` records the tmux pane id in a tmux *window option*, `@claude_code_pane`, rather than in a pane title, because Claude's TUI overwrites the title. Pressing `<leader>clc` a second time therefore refocuses the existing pane instead of stacking a new one. Both `<leader>clc` and `<leader>cln` share this machinery.
+`open_pane()` records the tmux pane id in a tmux *window option*, `@claude_code_pane`, rather than in a pane title, because Claude's TUI overwrites the title. Pressing `<leader>cl` a second time therefore refocuses the existing pane instead of stacking a new one. Both `<leader>cl` and `<leader>cn` share this machinery.
 
 ### Focus on send
 
@@ -110,7 +110,7 @@ tmux `focus-events` is **off** on this machine. Any design built on `FocusGained
 
 **Adopt the plugin; do not rebuild it.** The @-mention direction is nearly free, because the CLI parses the mention syntax itself. Native diffs are not: roughly 5,000 lines against an unpublished, drifting protocol, of which about 2,100 is WebSocket, 345 is lockfile and auth, and 2,480 is the blocking-diff state machine. That cost asymmetry decided the question. Adopting the plugin while refusing its UI captures the expensive half and pays nothing for the cheap half.
 
-**The Q&A helper is deliberately not IDE-connected.** `<leader>cln` opens a separate, Opus-pinned, fzf-picked session, always cwd'd in `~/.config/nvim`. If it also held an IDE connection, it could capture `openDiff` calls intended for the project you are actually editing. Two Claudes, one wire: you want exactly one of them holding it.
+**The Q&A helper is deliberately not IDE-connected.** `<leader>cn` opens a separate, Opus-pinned, fzf-picked session, always cwd'd in `~/.config/nvim`. If it also held an IDE connection, it could capture `openDiff` calls intended for the project you are actually editing. Two Claudes, one wire: you want exactly one of them holding it.
 
 **Do not touch plugin internals.** `reload_file_buffers_manual` exists and would have been a one-liner. It is not public API, and the plugin is beta. We used the documented `User` events instead.
 
@@ -118,10 +118,10 @@ tmux `focus-events` is **off** on this machine. Any design built on `FocusGained
 
 | Key | What it does |
 | --- | --- |
-| `<leader>clc` | open or refocus the project session, IDE-connected |
-| `<leader>cln` | open or refocus the Neovim-config Q&A session, not IDE-connected |
-| `<leader>cla` | accept the open diff; the buffer reloads on its own |
-| `<leader>cld` | reject the open diff |
+| `<leader>cl` | open or refocus the project session, IDE-connected |
+| `<leader>cn` | open or refocus the Neovim-config Q&A session, not IDE-connected |
+| `<leader>ca` | accept the open diff; the buffer reloads on its own |
+| `<leader>cd` | reject the open diff |
 | `<leader>r` | manual buffer refresh, still there as an override |
 
 
