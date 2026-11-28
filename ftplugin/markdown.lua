@@ -191,6 +191,33 @@ end, {
     desc = 'Toggle rendering the current Markdown file to PDF on every save',
 })
 
+vim.api.nvim_buf_create_user_command(0, 'MdGlow', function()
+    local file = vim.api.nvim_buf_get_name(0)
+    if file == '' then
+        vim.notify('Current buffer does not have a file path.', vim.log.levels.ERROR)
+        return
+    end
+
+    if vim.bo.modified then
+        vim.cmd.update()
+    end
+
+    -- glow reads the file from disk, so it must be saved first. A fresh empty buffer is needed
+    -- because a terminal job takes over the current buffer; it fills the current window and
+    -- is wiped once you leave it (<C-^> returns to the file). glow sizes its output to the pty,
+    -- which matches the window, so tables wrap to fit (needs `width: 0` in glow.yml).
+    vim.cmd.enew()
+    vim.bo.bufhidden = 'wipe'
+    vim.fn.jobstart({ 'glow', file }, { term = true })
+end, {
+    desc = 'Render the current Markdown file with glow in the current window',
+})
+
+vim.keymap.set('n', '<leader>mdg', '<cmd>MdGlow<cr>', {
+    buffer = 0,
+    desc = 'Render the current Markdown file with glow in the current window',
+})
+
 vim.keymap.set('n', '<leader>mdr', '<cmd>MoRender<cr>', {
     buffer = 0,
     desc = 'Render the current Markdown file with mo',

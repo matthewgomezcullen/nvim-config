@@ -385,6 +385,7 @@ Two caveats. The wire protocol is not published by Anthropic and `claudecode.nvi
 | Command / event | Effect |
 | --- | --- |
 | `:MoRender` (`<leader>mdr`) | Save the buffer if modified, then open it in the browser via `mo`. `<leader>md` shows as the "Keybinds for Markdown" group in which-key. |
+| `:MdGlow` (`<leader>mdg`) | Save the buffer if modified, then render it with `glow` in a terminal buffer that fills the current window. `<C-^>` returns to the file, and the glow buffer is wiped when you leave it. glow sizes its output to the window, so table cells wrap inside their borders instead of overflowing. This needs `width: 0` in `~/Library/Preferences/glow/glow.yml`, because the default `width: 80` makes narrower windows re-wrap glow's lines and break the tables. Rerun it after resizing the window. |
 | `:MdPdf` (`<leader>mdp`) | Save the buffer if modified, then render it to a PDF beside the source file with `pandoc --pdf-engine=xelatex`, and open the result in the default PDF app. xelatex comes from the MacTeX install VimTeX already relies on. The run is async, so a slow LaTeX pass doesn't block the editor, and pandoc's stderr is surfaced via `vim.notify` on failure. |
 | `:MdPdfWatch` (`<leader>mdw`) | Toggle live compilation for the buffer: render once (opening the PDF), then re-render on every save. Save renders are quiet — only failures notify — and toggling off stops the watch. |
 | Buffer deleted (`:bd`) | Remove the file from mo's session (`mo --close`) so it stops lingering in the sidebar. |
